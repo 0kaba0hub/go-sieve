@@ -198,6 +198,9 @@ type RuntimeData struct {
 	MatchVariables []string
 	Variables      map[string]string
 
+	// Vacation extension state
+	VacationResponses map[string]VacationResponse
+
 	// vnd.dovecot.testsuite state, not intended for production use
 	Test *TestRuntime
 }
@@ -223,6 +226,14 @@ func (d *RuntimeData) Copy() *RuntimeData {
 	}
 
 	copy(newData.AppliedActions, d.AppliedActions)
+
+	if d.VacationResponses != nil {
+		newData.VacationResponses = make(map[string]VacationResponse, len(d.VacationResponses))
+		for k, v := range d.VacationResponses {
+			newData.VacationResponses[k] = v
+		}
+	}
+
 	copy(newData.RedirectAddr, d.RedirectAddr)
 	copy(newData.Mailboxes, d.Mailboxes)
 	if d.Flags != nil {

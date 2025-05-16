@@ -28,6 +28,7 @@ var supportedRequires = map[string]struct{}{
 	"subaddress":   {},
 	"environment":  {},
 	"body":         {},
+	"vacation":     {},
 }
 
 var (
@@ -58,6 +59,8 @@ func init() {
 		// RFC 5429 (reject/ereject extensions)
 		"reject":  loadReject,
 		"ereject": loadEReject,
+		// RFC 5230 (vacation extension)
+		"vacation": loadVacation,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,
