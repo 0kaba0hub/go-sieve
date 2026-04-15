@@ -31,7 +31,8 @@ type (
 func DefaultOptions() Options {
 	return Options{
 		Lexer: lexer.Options{
-			MaxTokens: 5000,
+			MaxTokens:      5000,
+			MaxStringBytes: 1 << 20,
 		},
 		Parser: parser.Options{
 			MaxBlockNesting: 15,

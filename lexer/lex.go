@@ -10,9 +10,10 @@ import (
 )
 
 type Options struct {
-	Filename   string
-	NoPosition bool
-	MaxTokens  int
+	Filename       string
+	NoPosition     bool
+	MaxTokens      int
+	MaxStringBytes int
 }
 
 func consumeCRLF(r *bufio.Reader, state *lexerState) error {
@@ -108,7 +109,7 @@ func tokenStream(r *bufio.Reader, opts *Options) ([]Token, error) {
 			}
 		case '"':
 			lineCol := state.Position
-			str, err := quotedString(r, state)
+			str, err := quotedString(r, state, opts)
 			if err != nil {
 				return nil, err
 			}
@@ -169,7 +170,7 @@ func tokenStream(r *bufio.Reader, opts *Options) ([]Token, error) {
 						return nil, fmt.Errorf("unexpected character: %v", b)
 					}
 				}
-				mlString, err := multilineString(r, state)
+				mlString, err := multilineString(r, state, opts)
 				if err != nil {
 					return nil, err
 				}
@@ -336,7 +337,7 @@ func multilineComment(r *bufio.Reader, state *lexerState) error {
 	}
 }
 
-func quotedString(r *bufio.Reader, state *lexerState) (string, error) {
+func quotedString(r *bufio.Reader, state *lexerState, opts *Options) (string, error) {
 	str := strings.Builder{}
 	atBackslash := false
 	for {
@@ -354,27 +355,34 @@ func quotedString(r *bufio.Reader, state *lexerState) (string, error) {
 				return "", err
 			}
 
-			str.WriteByte('\r')
-			str.WriteByte('\n')
+			if err := appendStringBytes(&str, opts, '\r', '\n'); err != nil {
+				return "", err
+			}
 		case '\\':
 			if !atBackslash {
 				atBackslash = true
 				continue
 			}
-			str.WriteByte(b)
+			if err := appendStringBytes(&str, opts, b); err != nil {
+				return "", err
+			}
 		case '"':
 			if !atBackslash {
 				return str.String(), nil
 			}
-			str.WriteByte(b)
+			if err := appendStringBytes(&str, opts, b); err != nil {
+				return "", err
+			}
 		default:
-			str.WriteByte(b)
+			if err := appendStringBytes(&str, opts, b); err != nil {
+				return "", err
+			}
 		}
 		atBackslash = false
 	}
 }
 
-func multilineString(r *bufio.Reader, state *lexerState) (string, error) {
+func multilineString(r *bufio.Reader, state *lexerState, opts *Options) (string, error) {
 	atLF := false
 	atLFHadDot := false
 	var data strings.Builder
@@ -390,7 +398,9 @@ func multilineString(r *bufio.Reader, state *lexerState) (string, error) {
 			if atLF {
 				atLFHadDot = true
 			} else {
-				data.WriteByte('.')
+				if err := appendStringBytes(&data, opts, '.'); err != nil {
+					return "", err
+				}
 				atLFHadDot = false
 			}
 
@@ -405,16 +415,31 @@ func multilineString(r *bufio.Reader, state *lexerState) (string, error) {
 			if atLFHadDot {
 				return data.String(), nil
 			}
-			data.WriteByte('\r')
-			data.WriteByte('\n')
+			if err := appendStringBytes(&data, opts, '\r', '\n'); err != nil {
+				return "", err
+			}
 			atLF = true
 		default:
 			if atLFHadDot {
-				data.WriteByte('.')
+				if err := appendStringBytes(&data, opts, '.'); err != nil {
+					return "", err
+				}
 			}
 			atLF = false
 			atLFHadDot = false
-			data.WriteByte(b)
+			if err := appendStringBytes(&data, opts, b); err != nil {
+				return "", err
+			}
 		}
 	}
+}
+
+func appendStringBytes(dst *strings.Builder, opts *Options, bs ...byte) error {
+	if opts != nil && opts.MaxStringBytes > 0 && dst.Len()+len(bs) > opts.MaxStringBytes {
+		return fmt.Errorf("string exceeds maximum size of %d bytes", opts.MaxStringBytes)
+	}
+	for _, b := range bs {
+		dst.WriteByte(b)
+	}
+	return nil
 }

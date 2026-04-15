@@ -114,3 +114,15 @@ Line 5
 		Semicolon{Position: LineCol(8, 1)},
 	})
 }
+
+func TestLexStringSizeLimit(t *testing.T) {
+	_, err := Lex(strings.NewReader(`"abcd"`), &Options{MaxStringBytes: 3})
+	if err == nil {
+		t.Fatalf("expected quoted string size error")
+	}
+
+	_, err = Lex(strings.NewReader("text:\r\naaaa\r\n.\r\n"), &Options{MaxStringBytes: 3})
+	if err == nil {
+		t.Fatalf("expected multiline string size error")
+	}
+}
