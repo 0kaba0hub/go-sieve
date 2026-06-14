@@ -66,6 +66,9 @@ func init() {
 		"ereject": loadEReject,
 		// RFC 5230 (vacation extension)
 		"vacation": loadVacation,
+		// RFC 5293 (editheader extension)
+		"addheader":    loadAddHeader,
+		"deleteheader": loadDeleteHeader,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,

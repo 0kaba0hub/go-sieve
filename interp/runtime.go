@@ -201,6 +201,9 @@ type RuntimeData struct {
 	// Vacation extension state
 	VacationResponses map[string]VacationResponse
 
+	// Editheader extension state (RFC 5293)
+	HeaderEdits []HeaderEdit
+
 	// vnd.dovecot.testsuite state, not intended for production use
 	Test *TestRuntime
 }
@@ -241,6 +244,11 @@ func (d *RuntimeData) Copy() *RuntimeData {
 		copy(newData.Flags, d.Flags)
 	}
 	copy(newData.MatchVariables, d.MatchVariables)
+
+	if d.HeaderEdits != nil {
+		newData.HeaderEdits = make([]HeaderEdit, len(d.HeaderEdits))
+		copy(newData.HeaderEdits, d.HeaderEdits)
+	}
 
 	for k, v := range d.FlagAliases {
 		newData.FlagAliases[k] = v
