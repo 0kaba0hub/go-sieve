@@ -33,9 +33,10 @@ type Options struct {
 	Capabilities func(*Conn) []managesieve.CapabilityItem
 	TLSConfig    *tls.Config
 
-	InsecureAuth bool
-	DebugWriter  io.Writer
-	Logger       Logger
+	InsecureAuth        bool
+	EnableUnauthenticate bool
+	DebugWriter         io.Writer
+	Logger              Logger
 
 	AuthTimeout time.Duration
 	IdleTimeout time.Duration

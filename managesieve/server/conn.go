@@ -17,6 +17,22 @@ import (
 	"github.com/foxcpp/go-sieve/managesieve/internal/wire"
 )
 
+// writeWarningsOrOK sends OK (WARNINGS) if err is *ScriptWarnings, otherwise returns err.
+func (c *Conn) writeWarningsOrOK(err error) error {
+	if err == nil {
+		return c.writeStatus(managesieve.StatusResponse{Type: managesieve.StatusOK})
+	}
+	var warns *ScriptWarnings
+	if errors.As(err, &warns) {
+		return c.writeStatus(managesieve.StatusResponse{
+			Type: managesieve.StatusOK,
+			Code: managesieve.ResponseCodeWarnings,
+			Text: warns.Text,
+		})
+	}
+	return err
+}
+
 type Conn struct {
 	server *Server
 
@@ -249,6 +265,17 @@ func (c *Conn) handleCommand(name string, args []string) error {
 			return err
 		}
 		return c.writeStatus(managesieve.StatusResponse{Type: managesieve.StatusOK})
+	case "UNAUTHENTICATE":
+		if len(args) != 0 {
+			return &managesieve.Error{Type: managesieve.StatusNO, Text: "Invalid arguments"}
+		}
+		if c.session != nil {
+			_ = c.session.Close()
+			c.session = nil
+		}
+		c.owner = ""
+		c.state = managesieve.ConnStateNotAuthenticated
+		return c.writeCapabilityResponse(managesieve.StatusResponse{Type: managesieve.StatusOK})
 	default:
 		return &managesieve.Error{Type: managesieve.StatusNO, Text: "Unknown command"}
 	}
@@ -398,20 +425,17 @@ func (c *Conn) handlePutScript(ctx context.Context, args []string) error {
 	if len(args) != 2 {
 		return &managesieve.Error{Type: managesieve.StatusNO, Text: "Invalid arguments"}
 	}
-	if err := c.session.PutScript(ctx, args[0], []byte(args[1])); err != nil {
-		return err
+	if len(args[1]) == 0 {
+		return &managesieve.Error{Type: managesieve.StatusNO, Text: "Empty script not allowed"}
 	}
-	return c.writeStatus(managesieve.StatusResponse{Type: managesieve.StatusOK})
+	return c.writeWarningsOrOK(c.session.PutScript(ctx, args[0], []byte(args[1])))
 }
 
 func (c *Conn) handleCheckScript(ctx context.Context, args []string) error {
 	if len(args) != 1 {
 		return &managesieve.Error{Type: managesieve.StatusNO, Text: "Invalid arguments"}
 	}
-	if err := c.session.CheckScript(ctx, []byte(args[0])); err != nil {
-		return err
-	}
-	return c.writeStatus(managesieve.StatusResponse{Type: managesieve.StatusOK})
+	return c.writeWarningsOrOK(c.session.CheckScript(ctx, []byte(args[0])))
 }
 
 func (c *Conn) writeCapabilityResponse(status managesieve.StatusResponse) error {
@@ -455,6 +479,11 @@ func (c *Conn) availableCapabilities() []managesieve.CapabilityItem {
 	if c.state != managesieve.ConnStateAuthenticated {
 		if item := c.saslCapability(); item != nil {
 			out = append(out, *item)
+		}
+	}
+	if c.server.options.EnableUnauthenticate {
+		if !hasCapability(out, string(managesieve.CapUnauthenticate)) {
+			out = append(out, managesieve.CapabilityItem{Name: string(managesieve.CapUnauthenticate)})
 		}
 	}
 	return out

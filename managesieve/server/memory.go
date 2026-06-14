@@ -128,9 +128,6 @@ func (s *MemorySession) PutScript(_ context.Context, name string, script []byte)
 }
 
 func (s *MemorySession) CheckScript(_ context.Context, script []byte) error {
-	if s.opts.MaxScriptLen > 0 && int64(len(script)) > s.opts.MaxScriptLen {
-		return &managesieve.Error{Type: managesieve.StatusNO, Code: managesieve.ResponseCode("QUOTA/MAXSIZE"), Text: "Script is too large"}
-	}
 	if err := s.opts.Load(script); err != nil {
 		return &managesieve.Error{Type: managesieve.StatusNO, Text: err.Error()}
 	}

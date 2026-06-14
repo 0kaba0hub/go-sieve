@@ -20,3 +20,12 @@ type Storage interface {
 }
 
 type ScriptInfo = managesieve.ScriptInfo
+
+// ScriptWarnings is returned by Storage.PutScript or Storage.CheckScript when
+// the script is accepted but compilation produced non-fatal warnings.
+// The server translates this into an OK (WARNINGS) response per RFC 5804 §2.6.
+type ScriptWarnings struct {
+	Text string
+}
+
+func (w *ScriptWarnings) Error() string { return w.Text }
