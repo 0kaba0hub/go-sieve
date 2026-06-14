@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"rsc.io/binaryregexp"
 )
 
 type Match string
@@ -16,6 +18,7 @@ const (
 	MatchMatches  Match = "matches"
 	MatchValue    Match = "value"
 	MatchCount    Match = "count"
+	MatchRegex    Match = "regex"
 )
 
 type Comparator string
@@ -107,6 +110,8 @@ func testString(comparator Comparator, match Match, rel Relational, value, key s
 			return value == key, nil, nil
 		case MatchMatches:
 			return matchOctet(key, value, false)
+		case MatchRegex:
+			return matchRegex(key, value)
 		case MatchValue:
 			return rel.CompareString(value, key), nil, nil
 		case MatchCount:
@@ -121,6 +126,8 @@ func testString(comparator Comparator, match Match, rel Relational, value, key s
 			rhsNum := numericValue(key)
 			return RelEqual.CompareNumericValue(lhsNum, rhsNum), nil, nil
 		case MatchMatches:
+			return false, nil, ErrComparatorMatchUnsupported
+		case MatchRegex:
 			return false, nil, ErrComparatorMatchUnsupported
 		case MatchValue:
 			lhsNum := numericValue(value)
@@ -141,6 +148,8 @@ func testString(comparator Comparator, match Match, rel Relational, value, key s
 			return value == key, nil, nil
 		case MatchMatches:
 			return matchOctet(key, value, true)
+		case MatchRegex:
+			return matchRegex(key, toLowerASCII(value))
 		case MatchValue:
 			value = toLowerASCII(value)
 			key = toLowerASCII(key)
@@ -158,6 +167,8 @@ func testString(comparator Comparator, match Match, rel Relational, value, key s
 			return strings.EqualFold(value, key), nil, nil
 		case MatchMatches:
 			return matchUnicode(key, value, true)
+		case MatchRegex:
+			return matchRegex(key, strings.ToLower(value))
 		case MatchValue:
 			value = toLowerASCII(value)
 			key = toLowerASCII(key)
@@ -167,6 +178,18 @@ func testString(comparator Comparator, match Match, rel Relational, value, key s
 		}
 	}
 	return false, nil, nil
+}
+
+func matchRegex(pattern, value string) (bool, []string, error) {
+	re, err := binaryregexp.Compile(pattern)
+	if err != nil {
+		return false, nil, fmt.Errorf("regex: %w", err)
+	}
+	matches := re.FindStringSubmatch(value)
+	if matches == nil {
+		return false, nil, nil
+	}
+	return true, matches, nil
 }
 
 // splitSubAddress splits a local-part into user and detail using the

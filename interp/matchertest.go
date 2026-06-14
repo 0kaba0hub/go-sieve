@@ -63,6 +63,12 @@ func (t *matcherTest) addSpecTags(s *Spec) *Spec {
 			t.matchCnt++
 		},
 	}
+	s.Tags["regex"] = SpecTag{
+		MatchBool: func() {
+			t.Match = MatchRegex
+			t.matchCnt++
+		},
+	}
 	s.Tags["value"] = SpecTag{
 		NeedsValue:  true,
 		MinStrCount: 1,
@@ -139,6 +145,23 @@ func (t *matcherTest) setKey(s *Script, k []string) error {
 			t.keyCompiled[i], err = compileMatcher(t.Key[i], octet, caseFold)
 			if err != nil {
 				return fmt.Errorf("malformed pattern (%v): %v", t.Key[i], err)
+			}
+		}
+	}
+
+	if t.Match == MatchRegex {
+		if !s.RequiresExtension("regex") {
+			return fmt.Errorf("missing require 'regex'")
+		}
+		t.keyCompiled = make([]CompiledMatcher, len(t.Key))
+		for i := range t.Key {
+			if len(usedVars(s, t.Key[i])) > 0 {
+				continue
+			}
+			var err error
+			t.keyCompiled[i], err = compileMatcherRegex(t.Key[i], octet)
+			if err != nil {
+				return fmt.Errorf("malformed regex (%v): %v", t.Key[i], err)
 			}
 		}
 	}
@@ -232,7 +255,7 @@ func (t *matcherTest) tryMatch(d *RuntimeData, source string) (bool, error) {
 			return false, err
 		}
 		if ok {
-			if t.Match == MatchMatches {
+			if t.Match == MatchMatches || t.Match == MatchRegex {
 				d.MatchVariables = matches
 			}
 			return true, nil

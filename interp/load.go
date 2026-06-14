@@ -29,6 +29,11 @@ var supportedRequires = map[string]struct{}{
 	"environment":  {},
 	"body":         {},
 	"vacation":     {},
+	"regex":        {},
+	"date":         {},
+	"index":        {},
+	"editheader":   {},
+	"mailbox":      {},
 }
 
 var (
