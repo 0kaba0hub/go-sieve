@@ -36,8 +36,11 @@ func loadRequire(s *Script, pcmd parser.Cmd) (Cmd, error) {
 			return nil, fmt.Errorf("loadRequire: unsupported extension: %v", ext)
 		}
 		s.extensions[ext] = struct{}{}
-		if ext == "ihave" {
+		switch ext {
+		case "ihave":
 			s.ihave = true
+		case "imapflags":
+			s.extensions["imap4flags"] = struct{}{}
 		}
 	}
 	return nil, nil
