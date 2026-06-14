@@ -204,6 +204,9 @@ type RuntimeData struct {
 	// Editheader extension state (RFC 5293)
 	HeaderEdits []HeaderEdit
 
+	// Duplicate extension tracker (RFC 7352); nil = duplicate test always returns false.
+	DuplicateTracker DuplicateTracker
+
 	// vnd.dovecot.testsuite state, not intended for production use
 	Test *TestRuntime
 }

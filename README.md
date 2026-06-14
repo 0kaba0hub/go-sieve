@@ -27,6 +27,7 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - editheader ([RFC 5293])
 - mailbox ([RFC 5490])
 - ManageSieve client+server ([RFC 5804], WIP)
+- duplicate ([RFC 7352])
 
 ## Planned extensions
 
@@ -35,7 +36,7 @@ High priority:
 - [ ] spamtest / virustest ([RFC 5235]) — spam/virus score testing
 - [ ] enotify ([RFC 5435]) — event notifications (mailto:, xmpp:, …)
 - [ ] include ([RFC 6609]) — include personal/global Sieve scripts
-- [ ] duplicate ([RFC 7352]) — duplicate delivery detection
+- [x] duplicate ([RFC 7352]) — duplicate delivery detection
 
 Medium priority:
 

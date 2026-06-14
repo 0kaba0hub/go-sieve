@@ -34,6 +34,7 @@ var supportedRequires = map[string]struct{}{
 	"index":        {},
 	"editheader":   {},
 	"mailbox":      {},
+	"duplicate":    {},
 }
 
 var (
@@ -108,6 +109,8 @@ func init() {
 		"currentdate": loadCurrentDateTest,
 		// RFC 5490 (mailbox extension)
 		"mailboxexists": loadMailboxExistsTest,
+		// RFC 7352 (duplicate extension)
+		"duplicate": loadDuplicateTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)
