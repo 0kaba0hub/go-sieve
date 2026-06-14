@@ -82,7 +82,7 @@ func New(backend Backend, options *Options) *Server {
 		options.AuthTimeout = 30 * time.Second
 	}
 	if options.IdleTimeout <= 0 {
-		options.IdleTimeout = 5 * time.Minute
+		options.IdleTimeout = 30 * time.Minute
 	}
 	if options.MaxLiteralBytes <= 0 {
 		options.MaxLiteralBytes = 32 << 20
