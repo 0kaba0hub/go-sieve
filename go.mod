@@ -1,6 +1,6 @@
 module github.com/foxcpp/go-sieve
 
-go 1.20
+go 1.26.2
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -13,5 +13,5 @@ require (
 require (
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 )
