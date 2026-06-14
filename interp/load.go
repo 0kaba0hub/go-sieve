@@ -106,6 +106,8 @@ func init() {
 		// RFC 5260 (date extension)
 		"date":        loadDateTest,
 		"currentdate": loadCurrentDateTest,
+		// RFC 5490 (mailbox extension)
+		"mailboxexists": loadMailboxExistsTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)
