@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/foxcpp/go-sieve/parser"
+	"rsc.io/binaryregexp"
 )
 
 func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
@@ -49,6 +50,16 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 							}
 						}
 						return escaped.String()
+					}
+				},
+			},
+			"quoteregex": {
+				MatchBool: func() {
+					if modifiers[20] != nil {
+						conflictingMods = true
+					}
+					modifiers[20] = func(s string) string {
+						return binaryregexp.QuoteMeta(s)
 					}
 				},
 			},
