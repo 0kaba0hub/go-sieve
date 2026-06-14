@@ -100,6 +100,9 @@ func init() {
 		"environment": loadEnvironmentTest,
 		// RFC 5173 (body extension)
 		"body": loadBodyTest,
+		// RFC 5260 (date extension)
+		"date":        loadDateTest,
+		"currentdate": loadCurrentDateTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)
