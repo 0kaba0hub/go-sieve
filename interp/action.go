@@ -14,13 +14,24 @@ func (c CmdStop) Execute(_ context.Context, _ *RuntimeData) error {
 }
 
 type CmdFileInto struct {
-	Mailbox string
-	Flags   Flags
-	Copy    bool
+	Mailbox    string
+	Flags      Flags
+	Copy       bool
+	Create     bool   // mailbox extension (RFC 5490)
+	SpecialUse string // special-use extension (RFC 8579); "" = not used
 }
 
 func (c CmdFileInto) Execute(ctx context.Context, d *RuntimeData) error {
 	mailbox := expandVars(d, c.Mailbox)
+
+	if c.SpecialUse != "" {
+		if checker, ok := d.Policy.(SpecialUseChecker); ok {
+			if m, found := checker.SpecialUseMailbox(ctx, expandVars(d, c.SpecialUse)); found {
+				mailbox = m
+			}
+		}
+	}
+
 	found := false
 	for _, m := range d.Mailboxes {
 		if m == mailbox {
@@ -38,9 +49,11 @@ func (c CmdFileInto) Execute(ctx context.Context, d *RuntimeData) error {
 	flags = canonicalFlags(expandVarsList(d, flags), nil, d.FlagAliases)
 
 	if err := d.OnAction(ctx, ActionFileInto{
-		Mailbox: mailbox,
-		Flags:   flags,
-		Copy:    c.Copy,
+		Mailbox:    mailbox,
+		Flags:      flags,
+		Copy:       c.Copy,
+		Create:     c.Create,
+		SpecialUse: expandVars(d, c.SpecialUse),
 	}, d); err != nil {
 		return err
 	}

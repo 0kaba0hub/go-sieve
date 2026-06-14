@@ -19,9 +19,11 @@ func (ActionDiscard) testActionName() string    { return "discard" }
 func (ActionDiscard) cancelsImplicitKeep() bool { return true }
 
 type ActionFileInto struct {
-	Mailbox string
-	Flags   Flags
-	Copy    bool
+	Mailbox    string
+	Flags      Flags
+	Copy       bool
+	Create     bool   // mailbox extension (RFC 5490)
+	SpecialUse string // special-use extension (RFC 8579); "" = not used
 }
 
 func (ActionFileInto) testActionName() string            { return "fileinto" }

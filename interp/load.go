@@ -36,6 +36,7 @@ var supportedRequires = map[string]struct{}{
 	"mailbox":      {},
 	"duplicate":    {},
 	"ihave":        {},
+	"special-use":  {},
 }
 
 var (
@@ -116,6 +117,8 @@ func init() {
 		"duplicate": loadDuplicateTest,
 		// RFC 5463 (ihave extension)
 		"ihave": loadIhaveTest,
+		// RFC 8579 (special-use extension)
+		"specialuse_exists": loadSpecialUseExists,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)

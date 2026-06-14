@@ -71,9 +71,21 @@ func loadFileInto(s *Script, pcmd parser.Cmd) (Cmd, error) {
 				},
 			},
 			"copy": {
-				NeedsValue: false,
 				MatchBool: func() {
 					cmd.Copy = true
+				},
+			},
+			"create": {
+				MatchBool: func() {
+					cmd.Create = true
+				},
+			},
+			"specialuse": {
+				NeedsValue:  true,
+				MinStrCount: 1,
+				MaxStrCount: 1,
+				MatchStr: func(val []string) {
+					cmd.SpecialUse = val[0]
 				},
 			},
 		},
@@ -96,6 +108,12 @@ func loadFileInto(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	}
 	if cmd.Copy && !s.RequiresExtension("copy") {
 		return nil, parser.ErrorAt(pcmd.Position, "missing require 'copy'")
+	}
+	if cmd.Create && !s.RequiresExtension("mailbox") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'mailbox'")
+	}
+	if cmd.SpecialUse != "" && !s.RequiresExtension("special-use") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'special-use'")
 	}
 
 	return cmd, nil
