@@ -35,6 +35,11 @@ type Script struct {
 	extensions map[string]struct{}
 	cmd        []Cmd
 
+	// ihave is set when require "ihave" is declared (RFC 5463).
+	// All parse-time extension guards are bypassed so scripts can use any
+	// extension inside an ihave-guarded block without listing it in require.
+	ihave bool
+
 	opts *Options
 }
 
@@ -49,6 +54,9 @@ func (s Script) Extensions() []string {
 }
 
 func (s Script) RequiresExtension(name string) bool {
+	if s.ihave {
+		return true
+	}
 	_, ok := s.extensions[name]
 	return ok
 }

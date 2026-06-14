@@ -35,6 +35,7 @@ var supportedRequires = map[string]struct{}{
 	"editheader":   {},
 	"mailbox":      {},
 	"duplicate":    {},
+	"ihave":        {},
 }
 
 var (
@@ -70,6 +71,8 @@ func init() {
 		// RFC 5293 (editheader extension)
 		"addheader":    loadAddHeader,
 		"deleteheader": loadDeleteHeader,
+		// RFC 5463 (ihave extension)
+		"error": loadError,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,
@@ -111,6 +114,8 @@ func init() {
 		"mailboxexists": loadMailboxExistsTest,
 		// RFC 7352 (duplicate extension)
 		"duplicate": loadDuplicateTest,
+		// RFC 5463 (ihave extension)
+		"ihave": loadIhaveTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)
