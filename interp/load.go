@@ -43,9 +43,11 @@ var supportedRequires = map[string]struct{}{
 	"include":      {},
 	"extlists":     {},
 	"enotify":      {},
-	"spamtest":     {},
-	"spamtestplus": {},
-	"virustest":    {},
+	"spamtest":       {},
+	"spamtestplus":   {},
+	"virustest":      {},
+	"mboxmetadata":   {},
+	"servermetadata": {},
 }
 
 var (
@@ -142,6 +144,11 @@ func init() {
 		// RFC 5235 (spamtest / virustest extension)
 		"spamtest":  loadSpamTest,
 		"virustest": loadVirusTest,
+		// RFC 5490 §4 (mboxmetadata / servermetadata extension)
+		"metadata":              loadMetadataTest,
+		"metadataexists":        loadMetadataExistsTest,
+		"servermetadata":        loadServerMetadataTest,
+		"servermetadataexists":  loadServerMetadataExistsTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)

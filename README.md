@@ -36,13 +36,13 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - extlists ([RFC 6134])
 - enotify ([RFC 5435])
 - spamtest / virustest / spamtestplus ([RFC 5235])
+- mboxmetadata / servermetadata ([RFC 5490] §4)
 - imapflags — compatibility alias for imap4flags
 
 ## Planned extensions
 
 Medium priority:
 
-- [ ] mboxmetadata / servermetadata ([RFC 5490] §4) — IMAP METADATA tests
 - [ ] foreverypart + mime ([RFC 5703]) — MIME part iteration and header tests
 
 ## Example
