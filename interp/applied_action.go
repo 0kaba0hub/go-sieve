@@ -51,3 +51,16 @@ type ActionEReject struct {
 
 func (ActionEReject) testActionName() string    { return "ereject" }
 func (ActionEReject) cancelsImplicitKeep() bool { return true }
+
+// ActionNotify is emitted by the notify command (RFC 5435).
+// The MTA is responsible for dispatching the notification.
+type ActionNotify struct {
+	Method     string
+	From       string
+	Importance string   // "1" high, "2" normal, "3" low
+	Options    []string // method-specific key=value pairs
+	Message    string
+}
+
+func (ActionNotify) testActionName() string    { return "notify" }
+func (ActionNotify) cancelsImplicitKeep() bool { return false }

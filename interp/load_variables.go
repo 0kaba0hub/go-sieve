@@ -83,6 +83,14 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 					}
 				},
 			},
+			"encodeurl": {
+				MatchBool: func() {
+					if modifiers[15] != nil {
+						conflictingMods = true
+					}
+					modifiers[15] = percentEncode
+				},
+			},
 			"upperfirst": {
 				MatchBool: func() {
 					if modifiers[30] != nil {
@@ -140,6 +148,10 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 		return nil, parser.ErrorAt(pcmd.Position, "conflicting value modifiers")
 	}
 
+	if modifiers[15] != nil && !script.RequiresExtension("enotify") {
+		return nil, parser.ErrorAt(pcmd.Position, ":encodeurl requires 'enotify'")
+	}
+
 	settable, _ := script.IsVarUsable(cmd.Name)
 	if !settable {
 		return nil, parser.ErrorAt(pcmd.Position, "cannot set this variable")
@@ -147,7 +159,7 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 
 	cmd.ModifyValue = func(s string) string {
 		lastPrec := 9999
-		for _, prec := range [4]int{40, 30, 20, 10} {
+		for _, prec := range [5]int{40, 30, 20, 15, 10} {
 			fun := modifiers[prec]
 			if fun != nil {
 				s = fun(s)

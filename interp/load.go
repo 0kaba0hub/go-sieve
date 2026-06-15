@@ -42,6 +42,7 @@ var supportedRequires = map[string]struct{}{
 	"vacation-seconds": {},
 	"include":  {},
 	"extlists": {},
+	"enotify":  {},
 }
 
 var (
@@ -83,6 +84,8 @@ func init() {
 		"include": loadInclude,
 		"return":  loadReturn,
 		"global":  loadGlobal,
+		// RFC 5435 (enotify extension)
+		"notify": loadNotify,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,
@@ -130,6 +133,9 @@ func init() {
 		"specialuse_exists": loadSpecialUseExists,
 		// RFC 6134 (extlists extension)
 		"valid_ext_list": loadValidExtList,
+		// RFC 5435 (enotify extension)
+		"valid_notify_method":       loadValidNotifyMethod,
+		"notify_method_capability":  loadNotifyMethodCapability,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)
