@@ -40,6 +40,7 @@ var supportedRequires = map[string]struct{}{
 	"imapflags":    {}, // pre-RFC alias for imap4flags
 	"fcc":              {},
 	"vacation-seconds": {},
+	"include":          {},
 }
 
 var (
@@ -77,6 +78,10 @@ func init() {
 		"deleteheader": loadDeleteHeader,
 		// RFC 5463 (ihave extension)
 		"error": loadError,
+		// RFC 6609 (include extension)
+		"include": loadInclude,
+		"return":  loadReturn,
+		"global":  loadGlobal,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,

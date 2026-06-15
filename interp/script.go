@@ -82,6 +82,11 @@ func (s Script) IsVarUsable(variableName string) (settable, gettable bool) {
 			return false, false
 		}
 		return false, true
+	case "global":
+		if !s.RequiresExtension("include") {
+			return false, false
+		}
+		return true, true
 	case "":
 		return true, true
 	default:
@@ -92,7 +97,9 @@ func (s Script) IsVarUsable(variableName string) (settable, gettable bool) {
 func (s Script) Execute(ctx context.Context, d *RuntimeData) error {
 	for _, c := range s.cmd {
 		if err := c.Execute(ctx, d); err != nil {
-			if errors.Is(err, ErrStop) {
+			// ErrStop and ErrReturn both terminate the top-level script
+			// (RFC 5228 §3.3; RFC 6609 §3.2).
+			if errors.Is(err, ErrStop) || errors.Is(err, ErrReturn) {
 				return nil
 			}
 			return err
@@ -115,5 +122,19 @@ func (s Script) Execute(ctx context.Context, d *RuntimeData) error {
 		}
 	}
 
+	return nil
+}
+
+// executeIncluded runs the script as an included script (RFC 6609).
+// ErrReturn exits only this script; ErrStop propagates to stop all execution.
+func (s Script) executeIncluded(ctx context.Context, d *RuntimeData) error {
+	for _, c := range s.cmd {
+		if err := c.Execute(ctx, d); err != nil {
+			if errors.Is(err, ErrReturn) {
+				return nil
+			}
+			return err
+		}
+	}
 	return nil
 }

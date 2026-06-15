@@ -207,6 +207,19 @@ type RuntimeData struct {
 	// Duplicate extension tracker (RFC 7352); nil = duplicate test always returns false.
 	DuplicateTracker DuplicateTracker
 
+	// GlobalVars is the global variable namespace shared across all included scripts
+	// (RFC 6609). Accessible via "global.varname" or after a "global" declaration.
+	// Nil until first write.
+	GlobalVars map[string]string
+
+	// globalVarDecls holds variable names declared global via the "global" command
+	// in the current script. Per-script; reset for each included script execution.
+	globalVarDecls map[string]bool
+
+	// IncludeState tracks recursion and :once state for the include extension.
+	// Shared across all included script executions in one top-level Execute call.
+	IncludeState *IncludeState
+
 	// vnd.dovecot.testsuite state, not intended for production use
 	Test *TestRuntime
 }
@@ -294,8 +307,16 @@ func (d *RuntimeData) Var(name string) (string, error) {
 		default:
 			return "", nil
 		}
+	case "global":
+		if !d.Script.RequiresExtension("include") {
+			return "", fmt.Errorf("require 'include' to use global. variables")
+		}
+		return d.GlobalVars[name], nil
 	case "":
-		// User variables.
+		// User variables; redirect to global namespace if declared via "global".
+		if d.globalVarDecls[name] {
+			return d.GlobalVars[name], nil
+		}
 		return d.Variables[name], nil
 	default:
 		return "", fmt.Errorf("unknown extension variable: %v", name)
@@ -327,8 +348,24 @@ func (d *RuntimeData) SetVar(name, value string) error {
 	switch namespace {
 	case "envelope":
 		return fmt.Errorf("cannot modify envelope. variables")
+	case "global":
+		if !d.Script.RequiresExtension("include") {
+			return fmt.Errorf("require 'include' to use global. variables")
+		}
+		if d.GlobalVars == nil {
+			d.GlobalVars = map[string]string{}
+		}
+		d.GlobalVars[name] = value
+		return nil
 	case "":
-		// User variables.
+		// User variables; redirect to global namespace if declared via "global".
+		if d.globalVarDecls[name] {
+			if d.GlobalVars == nil {
+				d.GlobalVars = map[string]string{}
+			}
+			d.GlobalVars[name] = value
+			return nil
+		}
 		d.Variables[name] = value
 		return nil
 	default:
