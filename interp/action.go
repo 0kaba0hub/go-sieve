@@ -68,10 +68,25 @@ func (c CmdFileInto) Execute(ctx context.Context, d *RuntimeData) error {
 type CmdRedirect struct {
 	Addr string
 	Copy bool
+	List bool // if true, Addr is an external list name (RFC 6134)
 }
 
 func (c CmdRedirect) Execute(ctx context.Context, d *RuntimeData) error {
 	addr := expandVars(d, c.Addr)
+
+	if c.List {
+		listName := expandListName(addr)
+		if err := d.OnAction(ctx, ActionRedirect{
+			ListName: listName,
+			Copy:     c.Copy,
+		}, d); err != nil {
+			return err
+		}
+		if !c.Copy {
+			d.ImplicitKeep = false
+		}
+		return nil
+	}
 
 	ok, err := d.Policy.RedirectAllowed(ctx, d, addr)
 	if err != nil {

@@ -91,6 +91,12 @@ func (t *matcherTest) addSpecTags(s *Spec) *Spec {
 			t.Relational = Relational(val[0])
 		},
 	}
+	s.Tags["list"] = SpecTag{
+		MatchBool: func() {
+			t.Match = MatchList
+			t.matchCnt++
+		},
+	}
 	return s
 }
 
@@ -99,6 +105,16 @@ func (t *matcherTest) setKey(s *Script, k []string) error {
 
 	if t.matchCnt > 1 {
 		return fmt.Errorf("multiple match-types are not allowed")
+	}
+
+	if t.Match == MatchList {
+		if !s.RequiresExtension("extlists") {
+			return fmt.Errorf("missing require 'extlists'")
+		}
+		if t.Comparator != "" {
+			return fmt.Errorf(":list match type must not be combined with a comparator")
+		}
+		return nil
 	}
 
 	if t.Match == MatchCount || t.Match == MatchValue {
@@ -257,6 +273,30 @@ func (t *matcherTest) tryMatch(d *RuntimeData, source string) (bool, error) {
 		if ok {
 			if t.Match == MatchMatches || t.Match == MatchRegex {
 				d.MatchVariables = matches
+			}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// tryMatchList checks whether source is a member of any of the external lists
+// named in t.Key (RFC 6134). The caller is responsible for ensuring MatchList
+// is set before calling this method.
+func (t *matcherTest) tryMatchList(ctx context.Context, d *RuntimeData, source string) (bool, error) {
+	checker, ok := d.Policy.(ExternalListChecker)
+	if !ok {
+		return false, fmt.Errorf("extlists: Policy does not implement ExternalListChecker")
+	}
+	for _, listName := range t.Key {
+		listName = expandListName(expandVars(d, listName))
+		found, err := checker.ListContains(ctx, listName, source)
+		if err != nil {
+			return false, fmt.Errorf("extlists: list %q: %w", listName, err)
+		}
+		if found {
+			if d.Script.RequiresExtension("variables") {
+				d.MatchVariables = []string{source}
 			}
 			return true, nil
 		}

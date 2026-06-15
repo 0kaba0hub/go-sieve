@@ -40,7 +40,8 @@ var supportedRequires = map[string]struct{}{
 	"imapflags":    {}, // pre-RFC alias for imap4flags
 	"fcc":              {},
 	"vacation-seconds": {},
-	"include":          {},
+	"include":  {},
+	"extlists": {},
 }
 
 var (
@@ -127,6 +128,8 @@ func init() {
 		"ihave": loadIhaveTest,
 		// RFC 8579 (special-use extension)
 		"specialuse_exists": loadSpecialUseExists,
+		// RFC 6134 (extlists extension)
+		"valid_ext_list": loadValidExtList,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)

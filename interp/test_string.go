@@ -19,6 +19,7 @@ const (
 	MatchValue    Match = "value"
 	MatchCount    Match = "count"
 	MatchRegex    Match = "regex"
+	MatchList     Match = "list"
 )
 
 type Comparator string

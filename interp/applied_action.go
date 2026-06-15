@@ -30,8 +30,9 @@ func (ActionFileInto) testActionName() string            { return "fileinto" }
 func (a ActionFileInto) cancelsImplicitKeep() bool { return !a.Copy }
 
 type ActionRedirect struct {
-	Address string
-	Copy    bool
+	Address  string
+	Copy     bool
+	ListName string // non-empty when redirect :list was used (RFC 6134)
 }
 
 func (ActionRedirect) testActionName() string              { return "redirect" }

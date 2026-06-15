@@ -33,6 +33,7 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - fcc ([RFC 8580])
 - vacation-seconds ([RFC 6131])
 - include ([RFC 6609])
+- extlists ([RFC 6134])
 - imapflags — compatibility alias for imap4flags
 
 ## Planned extensions
@@ -46,10 +47,6 @@ Medium priority:
 
 - [ ] mboxmetadata / servermetadata ([RFC 5490] §4) — IMAP METADATA tests
 - [ ] foreverypart + mime ([RFC 5703]) — MIME part iteration and header tests
-
-Low priority:
-
-- [ ] extlists ([RFC 6134]) — :list match type against external address books
 
 ## Example
 

@@ -129,6 +129,12 @@ func loadRedirect(s *Script, pcmd parser.Cmd) (Cmd, error) {
 					cmd.Copy = true
 				},
 			},
+			"list": {
+				NeedsValue: false,
+				MatchBool: func() {
+					cmd.List = true
+				},
+			},
 		},
 		Pos: []SpecPosArg{
 			{
@@ -146,6 +152,9 @@ func loadRedirect(s *Script, pcmd parser.Cmd) (Cmd, error) {
 
 	if cmd.Copy && !s.RequiresExtension("copy") {
 		return nil, parser.ErrorAt(pcmd.Position, "missing require 'copy'")
+	}
+	if cmd.List && !s.RequiresExtension("extlists") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'extlists'")
 	}
 
 	return cmd, nil

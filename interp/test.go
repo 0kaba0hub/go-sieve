@@ -58,7 +58,7 @@ var allowedAddrHeaders = map[string]struct{}{
 	"x-original-to":                      {},
 }
 
-func (a AddressTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
+func (a AddressTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
 	entryCount := uint64(0)
 	for _, hdr := range a.Header {
 		hdr = strings.ToLower(hdr)
@@ -82,6 +82,17 @@ func (a AddressTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
 			for _, addr := range addrList {
 				if a.isCount() {
 					entryCount++
+					continue
+				}
+
+				if a.Match == MatchList {
+					ok, err := a.tryMatchList(ctx, d, addr.Address)
+					if err != nil {
+						return false, err
+					}
+					if ok {
+						return true, nil
+					}
 					continue
 				}
 
@@ -144,7 +155,7 @@ type EnvelopeTest struct {
 	Field       []string
 }
 
-func (e EnvelopeTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
+func (e EnvelopeTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
 	entryCount := uint64(0)
 	for _, field := range e.Field {
 		var value string
@@ -161,6 +172,17 @@ func (e EnvelopeTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
 		if e.isCount() {
 			if value != "" {
 				entryCount++
+			}
+			continue
+		}
+
+		if e.Match == MatchList {
+			ok, err := e.tryMatchList(ctx, d, value)
+			if err != nil {
+				return false, err
+			}
+			if ok {
+				return true, nil
 			}
 			continue
 		}
@@ -214,7 +236,7 @@ type HeaderTest struct {
 	Header []string
 }
 
-func (h HeaderTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
+func (h HeaderTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
 	entryCount := uint64(0)
 	for _, hdr := range h.Header {
 		values, err := d.Msg.HeaderGet(expandVars(d, hdr))
@@ -225,6 +247,17 @@ func (h HeaderTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
 		for _, value := range values {
 			if h.isCount() {
 				entryCount++
+				continue
+			}
+
+			if h.Match == MatchList {
+				ok, err := h.tryMatchList(ctx, d, value)
+				if err != nil {
+					return false, err
+				}
+				if ok {
+					return true, nil
+				}
 				continue
 			}
 
