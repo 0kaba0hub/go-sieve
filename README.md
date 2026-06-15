@@ -31,6 +31,7 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - ihave ([RFC 5463])
 - special-use ([RFC 8579])
 - fcc ([RFC 8580])
+- vacation-seconds ([RFC 6131])
 - imapflags — compatibility alias for imap4flags
 
 ## Planned extensions
@@ -48,7 +49,6 @@ Medium priority:
 
 Low priority:
 
-- [ ] vacation-seconds ([RFC 6131]) — :seconds N parameter for vacation
 - [ ] extlists ([RFC 6134]) — :list match type against external address books
 
 ## Example

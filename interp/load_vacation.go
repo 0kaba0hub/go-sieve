@@ -4,24 +4,28 @@ import (
 	"github.com/foxcpp/go-sieve/parser"
 )
 
-// loadVacation loads the vacation command as defined in RFC 5230.
-// The vacation command has the following syntax:
-//
-//	vacation [":days" number] [":subject" string]
-//	         [":from" string] [":addresses" string-list]
-//	         [":mime"] [":handle" string] <reason: string>
+// loadVacation loads the vacation command as defined in RFC 5230 and RFC 6131.
 func loadVacation(s *Script, pcmd parser.Cmd) (Cmd, error) {
-	if !s.RequiresExtension("vacation") {
+	if !s.RequiresExtension("vacation") && !s.RequiresExtension("vacation-seconds") {
 		return nil, parser.ErrorAt(pcmd.Position, "missing require 'vacation'")
 	}
 
 	cmd := CmdVacation{}
+	hasDays, hasSeconds := false, false
 	err := LoadSpec(s, &Spec{
 		Tags: map[string]SpecTag{
 			"days": {
 				NeedsValue: true,
 				MatchNum: func(val int) {
 					cmd.Days = val
+					hasDays = true
+				},
+			},
+			"seconds": {
+				NeedsValue: true,
+				MatchNum: func(val int) {
+					cmd.Seconds = val
+					hasSeconds = true
 				},
 			},
 			"subject": {
@@ -104,6 +108,12 @@ func loadVacation(s *Script, pcmd parser.Cmd) (Cmd, error) {
 		return nil, err
 	}
 
+	if hasDays && hasSeconds {
+		return nil, parser.ErrorAt(pcmd.Position, "vacation: :days and :seconds are mutually exclusive")
+	}
+	if hasSeconds && !s.RequiresExtension("vacation-seconds") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'vacation-seconds'")
+	}
 	if cmd.Fcc != "" && !s.RequiresExtension("fcc") {
 		return nil, parser.ErrorAt(pcmd.Position, "missing require 'fcc'")
 	}

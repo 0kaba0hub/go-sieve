@@ -41,6 +41,8 @@ func loadRequire(s *Script, pcmd parser.Cmd) (Cmd, error) {
 			s.ihave = true
 		case "imapflags":
 			s.extensions["imap4flags"] = struct{}{}
+		case "vacation-seconds":
+			s.extensions["vacation"] = struct{}{}
 		}
 	}
 	return nil, nil

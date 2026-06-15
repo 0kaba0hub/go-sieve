@@ -23,7 +23,12 @@ type VacationResponse struct {
 	Handle string
 
 	// Days specifies the minimum number of days between autoresponses to the same sender.
+	// Zero means :seconds is used instead; see Seconds.
 	Days int
+
+	// Seconds specifies the minimum interval in seconds between autoresponses (RFC 6131).
+	// Zero means :days is used instead; see Days.
+	Seconds int
 
 	// Fcc is the mailbox where a copy of the auto-reply should be filed (RFC 8580).
 	// Empty string means no filing.
@@ -66,6 +71,10 @@ type CmdVacation struct {
 
 	// Reason is the message body to be used in the autoresponse.
 	Reason string
+
+	// Seconds specifies the minimum interval in seconds between autoresponses (RFC 6131).
+	// Mutually exclusive with Days; zero means not set.
+	Seconds int
 
 	// Fcc is the mailbox where a copy of the auto-reply should be filed (RFC 8580).
 	Fcc string
@@ -112,33 +121,32 @@ func (c CmdVacation) Execute(ctx context.Context, d *RuntimeData) error {
 		}
 	}
 
-	// Check if we've already sent an autoresponse to this sender recently
-	days := c.Days
-	if days <= 0 {
-		days = 7 // Default is 7 days
-	}
-
-	// In a real implementation, we would check if we've already sent an autoresponse
-	// to this sender recently, and we would send the autoresponse if allowed.
-	// For now, we'll just add the autoresponse to the runtime data.
-
-	// Add the autoresponse to the runtime data
 	if d.VacationResponses == nil {
 		d.VacationResponses = make(map[string]VacationResponse)
 	}
 
-	d.VacationResponses[sender] = VacationResponse{
+	resp := VacationResponse{
 		From:          from,
 		Subject:       subject,
 		Body:          reason,
 		IsMime:        c.Mime,
 		Handle:        handle,
-		Days:          days,
 		Fcc:           expandVars(d, c.Fcc),
 		FccFlags:      c.FccFlags,
 		FccCreate:     c.FccCreate,
 		FccSpecialUse: expandVars(d, c.FccSpecialUse),
 	}
+	if c.Seconds > 0 {
+		resp.Seconds = c.Seconds
+	} else {
+		days := c.Days
+		if days <= 0 {
+			days = 7
+		}
+		resp.Days = days
+	}
+
+	d.VacationResponses[sender] = resp
 
 	return nil
 }
