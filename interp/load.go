@@ -40,9 +40,12 @@ var supportedRequires = map[string]struct{}{
 	"imapflags":    {}, // pre-RFC alias for imap4flags
 	"fcc":              {},
 	"vacation-seconds": {},
-	"include":  {},
-	"extlists": {},
-	"enotify":  {},
+	"include":      {},
+	"extlists":     {},
+	"enotify":      {},
+	"spamtest":     {},
+	"spamtestplus": {},
+	"virustest":    {},
 }
 
 var (
@@ -134,8 +137,11 @@ func init() {
 		// RFC 6134 (extlists extension)
 		"valid_ext_list": loadValidExtList,
 		// RFC 5435 (enotify extension)
-		"valid_notify_method":       loadValidNotifyMethod,
-		"notify_method_capability":  loadNotifyMethodCapability,
+		"valid_notify_method":      loadValidNotifyMethod,
+		"notify_method_capability": loadNotifyMethodCapability,
+		// RFC 5235 (spamtest / virustest extension)
+		"spamtest":  loadSpamTest,
+		"virustest": loadVirusTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)

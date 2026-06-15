@@ -35,13 +35,10 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - include ([RFC 6609])
 - extlists ([RFC 6134])
 - enotify ([RFC 5435])
+- spamtest / virustest / spamtestplus ([RFC 5235])
 - imapflags — compatibility alias for imap4flags
 
 ## Planned extensions
-
-High priority:
-
-- [ ] spamtest / virustest ([RFC 5235]) — spam/virus score testing
 
 Medium priority:
 
