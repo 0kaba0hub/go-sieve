@@ -24,6 +24,19 @@ type VacationResponse struct {
 
 	// Days specifies the minimum number of days between autoresponses to the same sender.
 	Days int
+
+	// Fcc is the mailbox where a copy of the auto-reply should be filed (RFC 8580).
+	// Empty string means no filing.
+	Fcc string
+
+	// FccFlags are the IMAP flags to set on the filed copy (requires imap4flags).
+	FccFlags Flags
+
+	// FccCreate indicates the mailbox should be created if it doesn't exist (requires mailbox).
+	FccCreate bool
+
+	// FccSpecialUse is the special-use attribute used to locate the target mailbox (requires special-use).
+	FccSpecialUse string
 }
 
 // CmdVacation represents the vacation command as defined in RFC 5230.
@@ -53,6 +66,18 @@ type CmdVacation struct {
 
 	// Reason is the message body to be used in the autoresponse.
 	Reason string
+
+	// Fcc is the mailbox where a copy of the auto-reply should be filed (RFC 8580).
+	Fcc string
+
+	// FccFlags are the IMAP flags to set on the filed copy (requires imap4flags).
+	FccFlags Flags
+
+	// FccCreate indicates the target mailbox should be created if it doesn't exist (requires mailbox).
+	FccCreate bool
+
+	// FccSpecialUse is the special-use attribute used to locate the target mailbox (requires special-use).
+	FccSpecialUse string
 }
 
 // Execute implements the vacation command as defined in RFC 5230.
@@ -103,12 +128,16 @@ func (c CmdVacation) Execute(ctx context.Context, d *RuntimeData) error {
 	}
 
 	d.VacationResponses[sender] = VacationResponse{
-		From:    from,
-		Subject: subject,
-		Body:    reason,
-		IsMime:  c.Mime,
-		Handle:  handle,
-		Days:    days,
+		From:          from,
+		Subject:       subject,
+		Body:          reason,
+		IsMime:        c.Mime,
+		Handle:        handle,
+		Days:          days,
+		Fcc:           expandVars(d, c.Fcc),
+		FccFlags:      c.FccFlags,
+		FccCreate:     c.FccCreate,
+		FccSpecialUse: expandVars(d, c.FccSpecialUse),
 	}
 
 	return nil

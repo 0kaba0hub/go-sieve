@@ -38,6 +38,7 @@ var supportedRequires = map[string]struct{}{
 	"ihave":        {},
 	"special-use":  {},
 	"imapflags":    {}, // pre-RFC alias for imap4flags
+	"fcc":          {},
 }
 
 var (

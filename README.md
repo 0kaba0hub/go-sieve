@@ -30,6 +30,7 @@ Sieve email filtering language ([RFC 5228]) interpreter implementation in Go.
 - duplicate ([RFC 7352])
 - ihave ([RFC 5463])
 - special-use ([RFC 8579])
+- fcc ([RFC 8580])
 - imapflags — compatibility alias for imap4flags
 
 ## Planned extensions
@@ -44,7 +45,6 @@ Medium priority:
 
 - [ ] mboxmetadata / servermetadata ([RFC 5490] §4) — IMAP METADATA tests
 - [ ] foreverypart + mime ([RFC 5703]) — MIME part iteration and header tests
-- [ ] fcc ([RFC 8580]) — vacation :fcc — file carbon copy of auto-replies
 
 Low priority:
 

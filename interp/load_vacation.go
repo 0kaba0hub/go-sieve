@@ -61,6 +61,34 @@ func loadVacation(s *Script, pcmd parser.Cmd) (Cmd, error) {
 					cmd.Handle = val[0]
 				},
 			},
+			"fcc": {
+				NeedsValue:  true,
+				MinStrCount: 1,
+				MaxStrCount: 1,
+				MatchStr: func(val []string) {
+					cmd.Fcc = val[0]
+				},
+			},
+			"flags": {
+				NeedsValue:  true,
+				MinStrCount: 1,
+				MatchStr: func(val []string) {
+					cmd.FccFlags = canonicalFlags(val, nil, nil)
+				},
+			},
+			"create": {
+				MatchBool: func() {
+					cmd.FccCreate = true
+				},
+			},
+			"specialuse": {
+				NeedsValue:  true,
+				MinStrCount: 1,
+				MaxStrCount: 1,
+				MatchStr: func(val []string) {
+					cmd.FccSpecialUse = val[0]
+				},
+			},
 		},
 		Pos: []SpecPosArg{
 			{
@@ -74,6 +102,19 @@ func loadVacation(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	}, pcmd.Position, pcmd.Args, pcmd.Tests, pcmd.Block)
 	if err != nil {
 		return nil, err
+	}
+
+	if cmd.Fcc != "" && !s.RequiresExtension("fcc") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'fcc'")
+	}
+	if cmd.FccFlags != nil && !s.RequiresExtension("imap4flags") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'imap4flags'")
+	}
+	if cmd.FccCreate && !s.RequiresExtension("mailbox") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'mailbox'")
+	}
+	if cmd.FccSpecialUse != "" && !s.RequiresExtension("special-use") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'special-use'")
 	}
 
 	return cmd, nil
