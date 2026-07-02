@@ -49,7 +49,8 @@ var supportedRequires = map[string]struct{}{
 	"mboxmetadata":   {},
 	"servermetadata": {},
 
-	YariloDebugExtension: {},
+	YariloDebugExtension:       {},
+	YariloEnvironmentExtension: {},
 }
 
 var (
