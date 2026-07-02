@@ -48,6 +48,8 @@ var supportedRequires = map[string]struct{}{
 	"virustest":      {},
 	"mboxmetadata":   {},
 	"servermetadata": {},
+
+	YariloDebugExtension: {},
 }
 
 var (
@@ -91,6 +93,8 @@ func init() {
 		"global":  loadGlobal,
 		// RFC 5435 (enotify extension)
 		"notify": loadNotify,
+		// vnd.yarilo.debug
+		"debug_log": loadDebugLog,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,

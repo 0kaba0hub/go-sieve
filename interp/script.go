@@ -29,6 +29,10 @@ type Options struct {
 	// and will execute tests.
 	T             *testing.T
 	DisabledTests []string
+
+	// DebugLog is called by the debug_log command (vnd.yarilo.debug extension).
+	// When nil the command is a no-op.
+	DebugLog func(msg string)
 }
 
 type Script struct {
