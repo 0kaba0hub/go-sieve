@@ -291,6 +291,18 @@ func (d *RuntimeData) Var(name string) (string, error) {
 	}
 
 	switch namespace {
+	case "env":
+		if !d.Script.RequiresExtension(YariloEnvironmentExtension) {
+			return "", fmt.Errorf("require '%s' to use env. variables", YariloEnvironmentExtension)
+		}
+		if d.Env == nil {
+			return "", nil
+		}
+		// Variable names replace hyphens with underscores (spec §4).
+		// Convert back to the canonical item name before lookup.
+		itemName := strings.ReplaceAll(name, "_", "-")
+		v, _ := d.Env.GetEnvironment(itemName)
+		return v, nil
 	case "envelope":
 		// >  References to namespaces without a prior require statement for the
 		// >  relevant extension MUST cause an error.

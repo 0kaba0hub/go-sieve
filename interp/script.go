@@ -76,13 +76,17 @@ func (s Script) IsVarUsable(variableName string) (settable, gettable bool) {
 		namespace = ""
 	}
 
-	if !lexer.IsValidIdentifier(name) {
-		return false, false
-	}
-
 	switch namespace {
+	case "env":
+		if !s.RequiresExtension(YariloEnvironmentExtension) {
+			return false, false
+		}
+		return false, true
 	case "envelope":
 		if !s.RequiresExtension("envelope") {
+			return false, false
+		}
+		if !lexer.IsValidIdentifier(name) {
 			return false, false
 		}
 		return false, true
@@ -90,8 +94,14 @@ func (s Script) IsVarUsable(variableName string) (settable, gettable bool) {
 		if !s.RequiresExtension("include") {
 			return false, false
 		}
+		if !lexer.IsValidIdentifier(name) {
+			return false, false
+		}
 		return true, true
 	case "":
+		if !lexer.IsValidIdentifier(name) {
+			return false, false
+		}
 		return true, true
 	default:
 		return false, false
