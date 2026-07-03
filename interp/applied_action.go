@@ -52,6 +52,20 @@ type ActionEReject struct {
 func (ActionEReject) testActionName() string    { return "ereject" }
 func (ActionEReject) cancelsImplicitKeep() bool { return true }
 
+// ActionPipe is emitted by the vnd.yarilo.pipe command.
+// ProgramName must not contain "/" or control characters (spec §3).
+// When Copy is false the action cancels the implicit keep, transferring
+// delivery responsibility to the external program.
+type ActionPipe struct {
+	ProgramName string
+	Args        []string
+	Copy        bool
+	Try         bool
+}
+
+func (ActionPipe) testActionName() string           { return "pipe" }
+func (a ActionPipe) cancelsImplicitKeep() bool { return !a.Copy }
+
 // ActionNotify is emitted by the notify command (RFC 5435).
 // The MTA is responsible for dispatching the notification.
 type ActionNotify struct {

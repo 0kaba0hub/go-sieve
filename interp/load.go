@@ -51,6 +51,7 @@ var supportedRequires = map[string]struct{}{
 
 	YariloDebugExtension:       {},
 	YariloEnvironmentExtension: {},
+	YariloPipeExtension:        {},
 }
 
 var (
@@ -96,6 +97,8 @@ func init() {
 		"notify": loadNotify,
 		// vnd.yarilo.debug
 		"debug_log": loadDebugLog,
+		// vnd.yarilo.pipe
+		"pipe": loadPipe,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,

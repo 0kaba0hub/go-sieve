@@ -23,6 +23,15 @@ type Env interface {
 	GetEnvironment(name string) (value string, ok bool)
 }
 
+// PipeExecutor runs an external program for the vnd.yarilo.pipe action.
+// The implementation locates the program (socket-first, then binary),
+// writes msg to stdin and waits for the process to exit successfully.
+// A non-nil error causes the pipe action to fail; with :try the error
+// is suppressed and script processing continues.
+type PipeExecutor interface {
+	Pipe(ctx context.Context, programName string, args []string, msg io.Reader) error
+}
+
 type Envelope interface {
 	EnvelopeFrom() string
 	EnvelopeTo() string
@@ -170,11 +179,12 @@ type TestRuntime struct {
 }
 
 type RuntimeData struct {
-	Policy   PolicyReader
-	Envelope Envelope
-	Msg      Message
-	Script   *Script
-	Env      Env
+	Policy       PolicyReader
+	Envelope     Envelope
+	Msg          Message
+	Script       *Script
+	Env          Env
+	PipeExecutor PipeExecutor
 	// For files accessible vis "include", "test_script_compile", etc.
 	Namespace fs.FS
 
@@ -222,6 +232,10 @@ type RuntimeData struct {
 
 	// vnd.dovecot.testsuite state, not intended for production use
 	Test *TestRuntime
+
+	// PipedPrograms tracks program names already used by vnd.yarilo.pipe in
+	// this script execution. The spec forbids piping to the same program twice.
+	PipedPrograms map[string]struct{}
 }
 
 func (d *RuntimeData) Copy() *RuntimeData {
