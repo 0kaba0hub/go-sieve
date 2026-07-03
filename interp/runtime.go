@@ -184,7 +184,12 @@ type RuntimeData struct {
 	Msg          Message
 	Script       *Script
 	Env          Env
-	PipeExecutor PipeExecutor
+	PipeExecutor   PipeExecutor
+	FilterExecutor FilterExecutor
+
+	// FilteredMessage holds the substituted message bytes after a successful
+	// filter command. The host engine replaces the delivery message with this.
+	FilteredMessage []byte
 	// For files accessible vis "include", "test_script_compile", etc.
 	Namespace fs.FS
 
