@@ -64,7 +64,9 @@ type ActionPipe struct {
 }
 
 func (ActionPipe) testActionName() string           { return "pipe" }
-func (a ActionPipe) cancelsImplicitKeep() bool { return !a.Copy }
+// :try pipes do not cancel implicit keep eagerly — cancellation happens
+// in the host engine only after the pipe executes successfully.
+func (a ActionPipe) cancelsImplicitKeep() bool { return !a.Copy && !a.Try }
 
 // ActionNotify is emitted by the notify command (RFC 5435).
 // The MTA is responsible for dispatching the notification.

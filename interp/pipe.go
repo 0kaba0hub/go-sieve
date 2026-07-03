@@ -95,7 +95,10 @@ func (c CmdPipe) Execute(ctx context.Context, d *RuntimeData) error {
 		return err
 	}
 
-	if !c.Copy {
+	// For :try pipes, defer ImplicitKeep cancellation to the host engine
+	// (after successful execution). This preserves implicit keep when the
+	// pipe fails silently.
+	if !c.Copy && !c.Try {
 		d.ImplicitKeep = false
 	}
 	return nil
