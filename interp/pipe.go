@@ -126,6 +126,7 @@ func loadPipe(s *Script, pcmd parser.Cmd) (Cmd, error) {
 				},
 			},
 			{
+				Optional:    true,
 				MinStrCount: 0,
 				MaxStrCount: -1,
 				MatchStr: func(val []string) {
