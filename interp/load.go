@@ -102,6 +102,8 @@ func init() {
 		"pipe": loadPipe,
 		// vnd.yarilo.filter
 		"filter": loadFilterCmd,
+		// vnd.yarilo.execute
+		"execute": loadExecuteCmd,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,
@@ -162,6 +164,8 @@ func init() {
 		"servermetadataexists":  loadServerMetadataExistsTest,
 		// vnd.yarilo.filter
 		"filter": loadFilterTest,
+		// vnd.yarilo.execute
+		"execute": loadExecuteTest,
 		// vnd.dovecot.testsuite
 		"test_script_compile": loadDovecotCompile,       // compile script (to test for compile errors)
 		"test_script_run":     loadDovecotRun,           // run script (to test for run-time errors)

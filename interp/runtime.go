@@ -184,8 +184,9 @@ type RuntimeData struct {
 	Msg          Message
 	Script       *Script
 	Env          Env
-	PipeExecutor   PipeExecutor
-	FilterExecutor FilterExecutor
+	PipeExecutor    PipeExecutor
+	FilterExecutor  FilterExecutor
+	ExecuteExecutor ExecuteExecutor
 
 	// FilteredMessage holds the substituted message bytes after a successful
 	// filter command. The host engine replaces the delivery message with this.
