@@ -53,6 +53,7 @@ var supportedRequires = map[string]struct{}{
 	YariloEnvironmentExtension: {},
 	YariloPipeExtension:        {},
 	YariloFilterExtension:      {},
+	YariloExecuteExtension:     {},
 }
 
 var (
