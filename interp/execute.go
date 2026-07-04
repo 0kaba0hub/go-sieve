@@ -138,6 +138,7 @@ func loadExecuteCommon(s *Script, pname *string, args *[]string, input *executeI
 				MatchBool: func() { *input = executeInputMessage },
 			},
 			"input": {
+				NeedsValue: true,
 				MatchStr: func(val []string) {
 					*input = executeInputString
 					*inputData = val[0]
@@ -146,6 +147,7 @@ func loadExecuteCommon(s *Script, pname *string, args *[]string, input *executeI
 				MaxStrCount: 1,
 			},
 			"output": {
+				NeedsValue: true,
 				MatchStr: func(val []string) {
 					*outputVar = val[0]
 				},
