@@ -50,6 +50,7 @@ var supportedRequires = map[string]struct{}{
 	"servermetadata": {},
 	"foreverypart":   {}, // RFC 5703
 	"mime":           {}, // RFC 5703
+	"extracttext":    {}, // RFC 5703
 
 	YariloDebugExtension:       {},
 	YariloEnvironmentExtension: {},
@@ -76,6 +77,7 @@ func init() {
 		// RFC 5703 (foreverypart extension)
 		"foreverypart": loadForEveryPart,
 		"break":        loadBreak,
+		"extracttext":  loadExtractText,
 		"fileinto": loadFileInto, // fileinto extension
 		"redirect": loadRedirect,
 		"keep":     loadKeep,

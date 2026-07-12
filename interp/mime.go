@@ -360,7 +360,77 @@ func loadBreak(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	return cmd, err
 }
 
+// decodePartText returns the current part's content transcoded to UTF-8:
+// go-message applies the transfer-encoding and charset. Per RFC 5703 §5 an
+// unrecognized or invalid transfer-encoding / charset yields the empty string.
+func decodePartText(p *mimePart) string {
+	if p == nil {
+		return ""
+	}
+	mh := message.Header{Header: p.header}
+	ent, err := message.New(mh, bytes.NewReader(p.body))
+	if err != nil {
+		return ""
+	}
+	decoded, err := io.ReadAll(ent.Body)
+	if err != nil {
+		return ""
+	}
+	return string(decoded)
+}
+
+// CmdExtractText implements the extracttext action (RFC 5703 §5): it stores the
+// current MIME part's transcoded text in a variable. Used outside a
+// foreverypart loop, it stores the empty string.
+type CmdExtractText struct {
+	First int // at most First characters; 0 = whole content
+	Var   string
+}
+
+func (c CmdExtractText) Execute(_ context.Context, d *RuntimeData) error {
+	text := decodePartText(d.currentMIMEPart())
+	if c.First > 0 {
+		if r := []rune(text); len(r) > c.First {
+			text = string(r[:c.First])
+		}
+	}
+	return d.SetVar(c.Var, text)
+}
+
+func loadExtractText(s *Script, pcmd parser.Cmd) (Cmd, error) {
+	if !s.RequiresExtension("extracttext") {
+		return nil, parser.ErrorAt(pcmd.Position, `missing require "extracttext"`)
+	}
+	if !s.RequiresExtension("variables") {
+		return nil, parser.ErrorAt(pcmd.Position, `extracttext requires "variables"`)
+	}
+	cmd := CmdExtractText{}
+	err := LoadSpec(s, &Spec{
+		Tags: map[string]SpecTag{
+			"first": {
+				NeedsValue: true,
+				MatchNum:   func(n int) { cmd.First = n },
+			},
+		},
+		Pos: []SpecPosArg{
+			{
+				MinStrCount: 1,
+				MaxStrCount: 1,
+				MatchStr:    func(v []string) { cmd.Var = strings.ToLower(v[0]) },
+			},
+		},
+	}, pcmd.Position, pcmd.Args, pcmd.Tests, pcmd.Block)
+	if err != nil {
+		return nil, err
+	}
+	if settable, _ := s.IsVarUsable(cmd.Var); !settable {
+		return nil, parser.ErrorAt(pcmd.Position, "cannot set this variable")
+	}
+	return cmd, nil
+}
+
 func init() {
 	gob.Register(CmdForEveryPart{})
 	gob.Register(CmdBreak{})
+	gob.Register(CmdExtractText{})
 }
