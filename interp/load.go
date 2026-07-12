@@ -48,6 +48,7 @@ var supportedRequires = map[string]struct{}{
 	"virustest":      {},
 	"mboxmetadata":   {},
 	"servermetadata": {},
+	"foreverypart":   {}, // RFC 5703
 
 	YariloDebugExtension:       {},
 	YariloEnvironmentExtension: {},
@@ -71,6 +72,9 @@ func init() {
 		"elsif":    loadElsif,
 		"else":     loadElse,
 		"stop":     loadStop,
+		// RFC 5703 (foreverypart extension)
+		"foreverypart": loadForEveryPart,
+		"break":        loadBreak,
 		"fileinto": loadFileInto, // fileinto extension
 		"redirect": loadRedirect,
 		"keep":     loadKeep,

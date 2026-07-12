@@ -63,6 +63,12 @@ func (m MessageStatic) MessageSize() int {
 	return m.Size
 }
 
+// RawMessageBytes implements RawMessager, exposing the full message for the
+// MIME-part extensions (RFC 5703).
+func (m MessageStatic) RawMessageBytes() []byte {
+	return m.RawMessage
+}
+
 func (m MessageStatic) BodyRaw(ctx context.Context) (io.Reader, error) {
 	if m.RawMessage == nil {
 		return nil, nil

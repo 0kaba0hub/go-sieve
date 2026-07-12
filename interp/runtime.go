@@ -196,6 +196,14 @@ type RuntimeData struct {
 
 	ifResult bool
 
+	// MIME part iteration state for the RFC 5703 foreverypart / mime /
+	// extracttext extensions. partStack is the stack of active foreverypart
+	// contexts (top = the current part); the tree is parsed once and cached.
+	partStack      []*mimePart
+	mimeTreeCache  *mimePart
+	mimeTreeErr    error
+	mimeTreeParsed bool
+
 	// OnAction is called each time a Sieve script requests some action. If an error is
 	// returned - script execution is aborted. Default handler (set by NewRuntimeData)
 	// appends applied action to AppliedActions. If OnAction is replaced, it must
