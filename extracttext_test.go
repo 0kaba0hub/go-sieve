@@ -48,3 +48,19 @@ extracttext "v";`
 		t.Fatal("expected error: extracttext without require")
 	}
 }
+
+func TestExtractText_Modifier(t *testing.T) {
+	eml := "Content-Type: multipart/mixed; boundary=b\r\n\r\n" +
+		"--b\r\nContent-Type: text/plain\r\n\r\nhello\r\n--b--\r\n"
+	script := `require ["foreverypart","mime","extracttext","variables","fileinto"];
+foreverypart {
+    if header :mime :type "Content-Type" "text" {
+        extracttext :upper "s";
+        fileinto "${s}";
+    }
+}`
+	got := fileIntoMailboxes(runScript(t, script, eml))
+	if len(got) != 1 || got[0] != "HELLO" {
+		t.Errorf("fileinto = %v, want [HELLO] (extracttext :upper)", got)
+	}
+}

@@ -383,8 +383,9 @@ func decodePartText(p *mimePart) string {
 // current MIME part's transcoded text in a variable. Used outside a
 // foreverypart loop, it stores the empty string.
 type CmdExtractText struct {
-	First int // at most First characters; 0 = whole content
-	Var   string
+	First  int    // at most First characters; 0 = whole content
+	Var    string // target variable
+	Modify func(string) string
 }
 
 func (c CmdExtractText) Execute(_ context.Context, d *RuntimeData) error {
@@ -393,6 +394,9 @@ func (c CmdExtractText) Execute(_ context.Context, d *RuntimeData) error {
 		if r := []rune(text); len(r) > c.First {
 			text = string(r[:c.First])
 		}
+	}
+	if c.Modify != nil {
+		text = c.Modify(text)
 	}
 	return d.SetVar(c.Var, text)
 }
@@ -405,13 +409,12 @@ func loadExtractText(s *Script, pcmd parser.Cmd) (Cmd, error) {
 		return nil, parser.ErrorAt(pcmd.Position, `extracttext requires "variables"`)
 	}
 	cmd := CmdExtractText{}
+	modifiers := map[int]func(string) string{}
+	var conflicting bool
+	tags := valueModifierTags(modifiers, &conflicting)
+	tags["first"] = SpecTag{NeedsValue: true, MatchNum: func(n int) { cmd.First = n }}
 	err := LoadSpec(s, &Spec{
-		Tags: map[string]SpecTag{
-			"first": {
-				NeedsValue: true,
-				MatchNum:   func(n int) { cmd.First = n },
-			},
-		},
+		Tags: tags,
 		Pos: []SpecPosArg{
 			{
 				MinStrCount: 1,
@@ -423,14 +426,23 @@ func loadExtractText(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+	if conflicting {
+		return nil, parser.ErrorAt(pcmd.Position, "conflicting value modifiers")
+	}
+	if modifiers[15] != nil && !s.RequiresExtension("enotify") {
+		return nil, parser.ErrorAt(pcmd.Position, ":encodeurl requires 'enotify'")
+	}
 	if settable, _ := s.IsVarUsable(cmd.Var); !settable {
 		return nil, parser.ErrorAt(pcmd.Position, "cannot set this variable")
 	}
+	cmd.Modify = buildValueModifier(s, modifiers)
 	return cmd, nil
 }
 
 func init() {
 	gob.Register(CmdForEveryPart{})
 	gob.Register(CmdBreak{})
-	gob.Register(CmdExtractText{})
+	// CmdExtractText carries a func field (value modifiers) and, like CmdSet,
+	// is intentionally not gob-registered — the binary Save/Restore path does
+	// not support func-bearing commands.
 }

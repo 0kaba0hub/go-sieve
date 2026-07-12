@@ -2,11 +2,9 @@ package interp
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/foxcpp/go-sieve/parser"
-	"rsc.io/binaryregexp"
 )
 
 func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
@@ -15,117 +13,11 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 	}
 	cmd := CmdSet{}
 
-	// by precedence
-	var modifiers = map[int]func(string) string{}
+	modifiers := map[int]func(string) string{}
 	var conflictingMods bool
 
 	err := LoadSpec(script, &Spec{
-		Tags: map[string]SpecTag{
-			"length": {
-				MatchBool: func() {
-					if modifiers[10] != nil {
-						conflictingMods = true
-					}
-					modifiers[10] = func(s string) string {
-						// RFC mentions `characters' and not octets
-						return strconv.Itoa(len([]rune(s)))
-					}
-				},
-			},
-			"quotewildcard": {
-				MatchBool: func() {
-					if modifiers[20] != nil {
-						conflictingMods = true
-					}
-					modifiers[20] = func(s string) string {
-						escaped := strings.Builder{}
-						escaped.Grow(len(s))
-						for _, chr := range s {
-							switch chr {
-							case '\\', '*', '?':
-								escaped.WriteByte('\\')
-								escaped.WriteRune(chr)
-							default:
-								escaped.WriteRune(chr)
-							}
-						}
-						return escaped.String()
-					}
-				},
-			},
-			"quoteregex": {
-				MatchBool: func() {
-					if modifiers[20] != nil {
-						conflictingMods = true
-					}
-					modifiers[20] = func(s string) string {
-						return binaryregexp.QuoteMeta(s)
-					}
-				},
-			},
-			"upper": {
-				MatchBool: func() {
-					if modifiers[40] != nil {
-						conflictingMods = true
-					}
-					modifiers[40] = func(s string) string {
-						return strings.ToUpper(s)
-					}
-				},
-			},
-			"lower": {
-				MatchBool: func() {
-					if modifiers[40] != nil {
-						conflictingMods = true
-					}
-					modifiers[40] = func(s string) string {
-						return strings.ToLower(s)
-					}
-				},
-			},
-			"encodeurl": {
-				MatchBool: func() {
-					if modifiers[15] != nil {
-						conflictingMods = true
-					}
-					modifiers[15] = percentEncode
-				},
-			},
-			"upperfirst": {
-				MatchBool: func() {
-					if modifiers[30] != nil {
-						conflictingMods = true
-					}
-					modifiers[30] = func(s string) string {
-						if len(s) == 0 {
-							return s
-						}
-						first := s[0]
-						if first >= 'a' && first <= 'z' {
-							first -= 'a' - 'A'
-						}
-						return string(first) + s[1:]
-					}
-				},
-			},
-			"lowerfirst": {
-				MatchBool: func() {
-					if modifiers[30] != nil {
-						conflictingMods = true
-					}
-					modifiers[30] = func(s string) string {
-						if len(s) == 0 {
-							return s
-						}
-						first := s[0]
-						if first >= 'A' && first <= 'Z' {
-							first += 'a' - 'A'
-						}
-						return string(first) + s[1:]
-					}
-				},
-			},
-		},
+		Tags: valueModifierTags(modifiers, &conflictingMods),
 		Pos: []SpecPosArg{
 			{
 				MinStrCount: 1,
@@ -157,41 +49,7 @@ func loadSet(script *Script, pcmd parser.Cmd) (Cmd, error) {
 		return nil, parser.ErrorAt(pcmd.Position, "cannot set this variable")
 	}
 
-	cmd.ModifyValue = func(s string) string {
-		lastPrec := 9999
-		for _, prec := range [5]int{40, 30, 20, 15, 10} {
-			fun := modifiers[prec]
-			if fun != nil {
-				s = fun(s)
-				lastPrec = prec
-			}
-		}
-
-		// If last run modifier was quotewildcard - check
-		// whether created value would remain valid
-		// if truncated to MaxVariableLen. If so, truncate
-		// here and remove dangling backslashes (if any).
-		if lastPrec == 20 {
-			if len(s) > script.opts.MaxVariableLen {
-				until := script.opts.MaxVariableLen
-
-				// (Copy-pasted from RuntimeData.SetVar)
-				// If this truncated an otherwise valid Unicode character,
-				// remove the character altogether.
-				for until > 0 && s[until] >= 128 && s[until] < 192 /* second or further octet of UTF-8 encoding */ {
-					until--
-				}
-
-				if s[until-1] == '\\' {
-					until--
-				}
-
-				s = s[:until]
-			}
-		}
-
-		return s
-	}
+	cmd.ModifyValue = buildValueModifier(script, modifiers)
 
 	return cmd, err
 }
