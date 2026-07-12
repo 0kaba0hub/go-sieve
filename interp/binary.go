@@ -8,6 +8,7 @@ import (
 
 type savedOptions struct {
 	MaxRedirects int
+	MaxActions   int
 
 	MaxVariableCount   int
 	MaxVariableNameLen int
@@ -26,6 +27,7 @@ func (s Script) SaveTo(w io.Writer) error {
 		Extensions: make([]string, 0, len(s.extensions)),
 		Options: savedOptions{
 			MaxRedirects:       s.opts.MaxRedirects,
+			MaxActions:         s.opts.MaxActions,
 			MaxVariableCount:   s.opts.MaxVariableCount,
 			MaxVariableNameLen: s.opts.MaxVariableNameLen,
 			MaxVariableLen:     s.opts.MaxVariableLen,
@@ -61,6 +63,7 @@ func RestoreFrom(r io.Reader) (*Script, error) {
 		extensions: make(map[string]struct{}, len(saved.Extensions)),
 		opts: &Options{
 			MaxRedirects:       saved.Options.MaxRedirects,
+			MaxActions:         saved.Options.MaxActions,
 			MaxVariableCount:   saved.Options.MaxVariableCount,
 			MaxVariableNameLen: saved.Options.MaxVariableNameLen,
 			MaxVariableLen:     saved.Options.MaxVariableLen,

@@ -40,6 +40,7 @@ func DefaultOptions() Options {
 		},
 		Interp: interp.Options{
 			MaxRedirects:       5,
+			MaxActions:         32,
 			MaxVariableCount:   128,
 			MaxVariableNameLen: 32,
 			MaxVariableLen:     4000,

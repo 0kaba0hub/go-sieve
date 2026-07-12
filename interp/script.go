@@ -16,6 +16,12 @@ type Cmd interface {
 type Options struct {
 	MaxRedirects int
 
+	// MaxActions caps the total number of actions a script may apply
+	// (fileinto, redirect, keep, ...). Zero means unlimited. Enforced by
+	// DefaultOnAction as actions accumulate, so execution aborts as soon as
+	// the limit is exceeded.
+	MaxActions int
+
 	MaxVariableCount   int
 	MaxVariableNameLen int
 	MaxVariableLen     int

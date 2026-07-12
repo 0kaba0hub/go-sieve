@@ -407,6 +407,9 @@ func (d *RuntimeData) SetVar(name, value string) error {
 
 func DefaultOnAction(ctx context.Context, action AppliedAction, d *RuntimeData) error {
 	d.AppliedActions = append(d.AppliedActions, action)
+	if max := d.Script.opts.MaxActions; max > 0 && len(d.AppliedActions) > max {
+		return fmt.Errorf("too many actions (limit %d)", max)
+	}
 	return nil
 }
 
