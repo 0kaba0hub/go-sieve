@@ -19,40 +19,41 @@ var supportedRequires = map[string]struct{}{
 	"comparator-i;ascii-numeric":   {},
 	"comparator-i;unicode-casemap": {},
 
-	"imap4flags":   {},
-	"variables":    {},
-	"relational":   {},
-	"copy":         {},
-	"reject":       {},
-	"ereject":      {},
-	"subaddress":   {},
-	"environment":  {},
-	"body":         {},
-	"vacation":     {},
-	"regex":        {},
-	"date":         {},
-	"index":        {},
-	"editheader":   {},
-	"mailbox":      {},
-	"duplicate":    {},
-	"ihave":        {},
-	"special-use":  {},
-	"imapflags":    {}, // pre-RFC alias for imap4flags
+	"imap4flags":       {},
+	"variables":        {},
+	"relational":       {},
+	"copy":             {},
+	"reject":           {},
+	"ereject":          {},
+	"subaddress":       {},
+	"environment":      {},
+	"body":             {},
+	"vacation":         {},
+	"regex":            {},
+	"date":             {},
+	"index":            {},
+	"editheader":       {},
+	"mailbox":          {},
+	"duplicate":        {},
+	"ihave":            {},
+	"special-use":      {},
+	"mailboxid":        {},
+	"imapflags":        {}, // pre-RFC alias for imap4flags
 	"fcc":              {},
 	"vacation-seconds": {},
-	"include":      {},
-	"extlists":     {},
-	"enotify":      {},
-	"spamtest":       {},
-	"spamtestplus":   {},
-	"virustest":      {},
-	"mboxmetadata":   {},
-	"servermetadata": {},
-	"foreverypart":   {}, // RFC 5703
-	"mime":           {}, // RFC 5703
-	"extracttext":    {}, // RFC 5703
-	"replace":        {}, // RFC 5703
-	"enclose":        {}, // RFC 5703
+	"include":          {},
+	"extlists":         {},
+	"enotify":          {},
+	"spamtest":         {},
+	"spamtestplus":     {},
+	"virustest":        {},
+	"mboxmetadata":     {},
+	"servermetadata":   {},
+	"foreverypart":     {}, // RFC 5703
+	"mime":             {}, // RFC 5703
+	"extracttext":      {}, // RFC 5703
+	"replace":          {}, // RFC 5703
+	"enclose":          {}, // RFC 5703
 
 	YariloDebugExtension:       {},
 	YariloEnvironmentExtension: {},
@@ -71,21 +72,21 @@ func init() {
 
 	commands = map[string]func(*Script, parser.Cmd) (Cmd, error){
 		// RFC 5228
-		"require":  loadRequire,
-		"if":       loadIf,
-		"elsif":    loadElsif,
-		"else":     loadElse,
-		"stop":     loadStop,
+		"require": loadRequire,
+		"if":      loadIf,
+		"elsif":   loadElsif,
+		"else":    loadElse,
+		"stop":    loadStop,
 		// RFC 5703 (foreverypart extension)
 		"foreverypart": loadForEveryPart,
 		"break":        loadBreak,
 		"extracttext":  loadExtractText,
 		"replace":      loadReplace,
 		"enclose":      loadEnclose,
-		"fileinto": loadFileInto, // fileinto extension
-		"redirect": loadRedirect,
-		"keep":     loadKeep,
-		"discard":  loadDiscard,
+		"fileinto":     loadFileInto, // fileinto extension
+		"redirect":     loadRedirect,
+		"keep":         loadKeep,
+		"discard":      loadDiscard,
 		// RFC 5232 (imap4flags extension)
 		"setflag":    loadSetFlag,
 		"addflag":    loadAddFlag,
@@ -161,6 +162,8 @@ func init() {
 		"ihave": loadIhaveTest,
 		// RFC 8579 (special-use extension)
 		"specialuse_exists": loadSpecialUseExists,
+		// RFC 9042 (mailboxid extension)
+		"mailboxidexists": loadMailboxIDExists,
 		// RFC 6134 (extlists extension)
 		"valid_ext_list": loadValidExtList,
 		// RFC 5435 (enotify extension)
@@ -170,10 +173,10 @@ func init() {
 		"spamtest":  loadSpamTest,
 		"virustest": loadVirusTest,
 		// RFC 5490 §4 (mboxmetadata / servermetadata extension)
-		"metadata":              loadMetadataTest,
-		"metadataexists":        loadMetadataExistsTest,
-		"servermetadata":        loadServerMetadataTest,
-		"servermetadataexists":  loadServerMetadataExistsTest,
+		"metadata":             loadMetadataTest,
+		"metadataexists":       loadMetadataExistsTest,
+		"servermetadata":       loadServerMetadataTest,
+		"servermetadataexists": loadServerMetadataExistsTest,
 		// vnd.yarilo.filter
 		"filter": loadFilterTest,
 		// vnd.yarilo.execute

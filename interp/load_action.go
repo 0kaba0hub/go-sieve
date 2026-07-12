@@ -88,6 +88,14 @@ func loadFileInto(s *Script, pcmd parser.Cmd) (Cmd, error) {
 					cmd.SpecialUse = val[0]
 				},
 			},
+			"mailboxid": {
+				NeedsValue:  true,
+				MinStrCount: 1,
+				MaxStrCount: 1,
+				MatchStr: func(val []string) {
+					cmd.MailboxID = val[0]
+				},
+			},
 		},
 		Pos: []SpecPosArg{
 			{
@@ -114,6 +122,9 @@ func loadFileInto(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	}
 	if cmd.SpecialUse != "" && !s.RequiresExtension("special-use") {
 		return nil, parser.ErrorAt(pcmd.Position, "missing require 'special-use'")
+	}
+	if cmd.MailboxID != "" && !s.RequiresExtension("mailboxid") {
+		return nil, parser.ErrorAt(pcmd.Position, "missing require 'mailboxid'")
 	}
 
 	return cmd, nil

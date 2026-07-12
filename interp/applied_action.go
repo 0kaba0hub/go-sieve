@@ -24,9 +24,10 @@ type ActionFileInto struct {
 	Copy       bool
 	Create     bool   // mailbox extension (RFC 5490)
 	SpecialUse string // special-use extension (RFC 8579); "" = not used
+	MailboxID  string // mailboxid extension (RFC 9042); "" = not used
 }
 
-func (ActionFileInto) testActionName() string            { return "fileinto" }
+func (ActionFileInto) testActionName() string      { return "fileinto" }
 func (a ActionFileInto) cancelsImplicitKeep() bool { return !a.Copy }
 
 type ActionRedirect struct {
@@ -35,7 +36,7 @@ type ActionRedirect struct {
 	ListName string // non-empty when redirect :list was used (RFC 6134)
 }
 
-func (ActionRedirect) testActionName() string              { return "redirect" }
+func (ActionRedirect) testActionName() string      { return "redirect" }
 func (a ActionRedirect) cancelsImplicitKeep() bool { return !a.Copy }
 
 type ActionReject struct {
@@ -63,7 +64,8 @@ type ActionPipe struct {
 	Try         bool
 }
 
-func (ActionPipe) testActionName() string           { return "pipe" }
+func (ActionPipe) testActionName() string { return "pipe" }
+
 // :try pipes do not cancel implicit keep eagerly — cancellation happens
 // in the host engine only after the pipe executes successfully.
 func (a ActionPipe) cancelsImplicitKeep() bool { return !a.Copy && !a.Try }

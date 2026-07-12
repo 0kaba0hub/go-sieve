@@ -19,12 +19,23 @@ type CmdFileInto struct {
 	Copy       bool
 	Create     bool   // mailbox extension (RFC 5490)
 	SpecialUse string // special-use extension (RFC 8579); "" = not used
+	MailboxID  string // mailboxid extension (RFC 9042); "" = not used
 }
 
 func (c CmdFileInto) Execute(ctx context.Context, d *RuntimeData) error {
 	mailbox := expandVars(d, c.Mailbox)
+	resolved := false
 
-	if c.SpecialUse != "" {
+	if c.MailboxID != "" {
+		if checker, ok := d.Policy.(MailboxIDChecker); ok {
+			if m, found := checker.MailboxByID(ctx, expandVars(d, c.MailboxID)); found {
+				mailbox = m
+				resolved = true
+			}
+		}
+	}
+
+	if !resolved && c.SpecialUse != "" {
 		if checker, ok := d.Policy.(SpecialUseChecker); ok {
 			if m, found := checker.SpecialUseMailbox(ctx, expandVars(d, c.SpecialUse)); found {
 				mailbox = m
@@ -54,6 +65,7 @@ func (c CmdFileInto) Execute(ctx context.Context, d *RuntimeData) error {
 		Copy:       c.Copy,
 		Create:     c.Create,
 		SpecialUse: expandVars(d, c.SpecialUse),
+		MailboxID:  expandVars(d, c.MailboxID),
 	}, d); err != nil {
 		return err
 	}
