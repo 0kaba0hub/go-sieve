@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	message "github.com/emersion/go-message"
 	"github.com/emersion/go-message/mail"
 )
 
@@ -203,9 +204,31 @@ func (e EnvelopeTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
 
 type ExistsTest struct {
 	Fields []string
+
+	// RFC 5703 §4: :mime evaluates against MIME part headers; :anychild widens
+	// the scope to nested parts.
+	Mime     bool
+	AnyChild bool
 }
 
 func (e ExistsTest) Check(_ context.Context, d *RuntimeData) (bool, error) {
+	if e.Mime {
+		parts := d.mimeTestParts(e.AnyChild)
+		for _, field := range e.Fields {
+			field = expandVars(d, field)
+			found := false
+			for _, p := range parts {
+				if mh := (message.Header{Header: p.header}); mh.Has(field) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
 	for _, field := range e.Fields {
 		values, err := d.Msg.HeaderGet(expandVars(d, field))
 		if err != nil {
@@ -234,9 +257,20 @@ type HeaderTest struct {
 	matcherTest
 
 	Header []string
+
+	// RFC 5703 §4 MIME part test. Mime selects MIME-part-header evaluation;
+	// MimeMode is "" | "type" | "subtype" | "contenttype" | "param"; MimeParams
+	// holds the :param names; AnyChild widens the scope to nested parts.
+	Mime       bool
+	AnyChild   bool
+	MimeMode   string
+	MimeParams []string
 }
 
 func (h HeaderTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
+	if h.Mime {
+		return h.checkMime(ctx, d)
+	}
 	entryCount := uint64(0)
 	for _, hdr := range h.Header {
 		values, err := d.Msg.HeaderGet(expandVars(d, hdr))
@@ -275,6 +309,44 @@ func (h HeaderTest) Check(ctx context.Context, d *RuntimeData) (bool, error) {
 		return h.countMatches(d, entryCount), nil
 	}
 
+	return false, nil
+}
+
+// checkMime evaluates the header test against MIME part headers (RFC 5703 §4).
+func (h HeaderTest) checkMime(ctx context.Context, d *RuntimeData) (bool, error) {
+	parts := d.mimeTestParts(h.AnyChild)
+	entryCount := uint64(0)
+	for _, p := range parts {
+		for _, hdr := range h.Header {
+			values := mimeHeaderValues(p, expandVars(d, hdr), h.MimeMode, h.MimeParams)
+			for _, value := range values {
+				if h.isCount() {
+					entryCount++
+					continue
+				}
+				if h.Match == MatchList {
+					ok, err := h.tryMatchList(ctx, d, value)
+					if err != nil {
+						return false, err
+					}
+					if ok {
+						return true, nil
+					}
+					continue
+				}
+				ok, err := h.matcherTest.tryMatch(d, value)
+				if err != nil {
+					return false, err
+				}
+				if ok {
+					return true, nil
+				}
+			}
+		}
+	}
+	if h.isCount() {
+		return h.countMatches(d, entryCount), nil
+	}
 	return false, nil
 }
 

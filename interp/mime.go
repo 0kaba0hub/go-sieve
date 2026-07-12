@@ -12,6 +12,7 @@ import (
 	message "github.com/emersion/go-message"
 	"github.com/emersion/go-message/textproto"
 
+	"github.com/foxcpp/go-sieve/lexer"
 	"github.com/foxcpp/go-sieve/parser"
 )
 
@@ -129,6 +130,103 @@ func (d *RuntimeData) mimeTree() (*mimePart, error) {
 	return d.mimeTreeCache, d.mimeTreeErr
 }
 
+// mimeTestParts returns the parts a :mime test (RFC 5703 §4) must examine:
+//   - outside foreverypart: the top-level message part, or (with :anychild)
+//     every part of the message;
+//   - inside foreverypart: the current part, or (with :anychild) the current
+//     part plus all its descendants.
+func (d *RuntimeData) mimeTestParts(anyChild bool) []*mimePart {
+	cur := d.currentMIMEPart()
+	if cur == nil {
+		tree, _ := d.mimeTree()
+		if tree == nil {
+			return nil
+		}
+		if !anyChild {
+			return []*mimePart{tree}
+		}
+		return append([]*mimePart{tree}, tree.descendants()...)
+	}
+	if !anyChild {
+		return []*mimePart{cur}
+	}
+	return append([]*mimePart{cur}, cur.descendants()...)
+}
+
+// parseMIMEHeaderValue splits a structured MIME header value ("value; k=v; ...")
+// into its main token and its parameters (lower-cased keys, unquoted values).
+func parseMIMEHeaderValue(v string) (main string, params map[string]string) {
+	params = map[string]string{}
+	segs := strings.Split(v, ";")
+	main = strings.TrimSpace(segs[0])
+	for _, s := range segs[1:] {
+		eq := strings.IndexByte(s, '=')
+		if eq < 0 {
+			continue
+		}
+		k := strings.ToLower(strings.TrimSpace(s[:eq]))
+		val := strings.Trim(strings.TrimSpace(s[eq+1:]), "\"")
+		params[k] = val
+	}
+	return main, params
+}
+
+// mimeHeaderValues extracts the value(s) a :mime test matches against from
+// part's `field` header, applying the :type / :subtype / :contenttype / :param
+// selector (mode). An empty mode returns the raw header value.
+func mimeHeaderValues(part *mimePart, field, mode string, paramNames []string) []string {
+	if part == nil {
+		return nil
+	}
+	mh := message.Header{Header: part.header}
+	raw := mh.Get(field)
+	main, params := parseMIMEHeaderValue(raw)
+	fieldLC := strings.ToLower(field)
+	typ, sub := main, ""
+	if i := strings.IndexByte(main, '/'); i >= 0 {
+		typ, sub = main[:i], main[i+1:]
+	}
+	switch mode {
+	case "":
+		if raw == "" {
+			return nil
+		}
+		return []string{raw}
+	case "type":
+		switch fieldLC {
+		case "content-type":
+			return []string{strings.ToLower(typ)}
+		case "content-disposition":
+			return []string{strings.ToLower(main)}
+		default:
+			return []string{""}
+		}
+	case "subtype":
+		if fieldLC == "content-type" {
+			return []string{strings.ToLower(sub)}
+		}
+		return []string{""}
+	case "contenttype":
+		switch fieldLC {
+		case "content-type":
+			return []string{strings.ToLower(strings.TrimSpace(main))}
+		case "content-disposition":
+			return []string{strings.ToLower(main)}
+		default:
+			return []string{""}
+		}
+	case "param":
+		var out []string
+		for _, name := range paramNames {
+			if val, ok := params[strings.ToLower(name)]; ok {
+				out = append(out, val)
+			}
+		}
+		return out
+	}
+	return nil
+}
+
 // CmdForEveryPart implements the foreverypart loop (RFC 5703 §3). It walks the
 // MIME parts depth-first; a nested foreverypart iterates the descendants of the
 // enclosing loop's current part.
@@ -202,6 +300,36 @@ type breakSignal struct {
 }
 
 func (b *breakSignal) Error() string { return "sieve: break outside a matching foreverypart loop" }
+
+// mimeSpecTags returns the RFC 5703 §4 tagged arguments shared by the header
+// and exists tests, wiring them to the target fields. Call validateMimeTags
+// after LoadSpec to enforce the dependency rules.
+func mimeSpecTags(mime, anyChild *bool, mode *string, params *[]string) map[string]SpecTag {
+	return map[string]SpecTag{
+		"mime":        {MatchBool: func() { *mime = true }},
+		"anychild":    {MatchBool: func() { *anyChild = true }},
+		"type":        {MatchBool: func() { *mode = "type" }},
+		"subtype":     {MatchBool: func() { *mode = "subtype" }},
+		"contenttype": {MatchBool: func() { *mode = "contenttype" }},
+		"param": {
+			NeedsValue:  true,
+			MinStrCount: 1,
+			MatchStr:    func(v []string) { *mode = "param"; *params = v },
+		},
+	}
+}
+
+// validateMimeTags enforces RFC 5703 §4: the selector tags require :mime, and
+// :mime requires the "mime" capability.
+func validateMimeTags(s *Script, pos lexer.Position, mime, anyChild bool, mode string, params []string) error {
+	if (anyChild || mode != "" || len(params) > 0) && !mime {
+		return parser.ErrorAt(pos, "MIME tags (:anychild/:type/:subtype/:contenttype/:param) require :mime")
+	}
+	if mime && !s.RequiresExtension("mime") {
+		return parser.ErrorAt(pos, `missing require "mime"`)
+	}
+	return nil
+}
 
 func loadForEveryPart(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	cmd := CmdForEveryPart{}

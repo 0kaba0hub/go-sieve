@@ -49,6 +49,7 @@ var supportedRequires = map[string]struct{}{
 	"mboxmetadata":   {},
 	"servermetadata": {},
 	"foreverypart":   {}, // RFC 5703
+	"mime":           {}, // RFC 5703
 
 	YariloDebugExtension:       {},
 	YariloEnvironmentExtension: {},

@@ -160,7 +160,10 @@ func loadEnvelopeTest(s *Script, test parser.Test) (Test, error) {
 
 func loadExistsTest(s *Script, test parser.Test) (Test, error) {
 	loaded := ExistsTest{}
+	var mode string
+	var params []string
 	err := LoadSpec(s, &Spec{
+		Tags: mimeSpecTags(&loaded.Mime, &loaded.AnyChild, &mode, &params),
 		Pos: []SpecPosArg{
 			{
 				MatchStr: func(val []string) {
@@ -170,6 +173,16 @@ func loadExistsTest(s *Script, test parser.Test) (Test, error) {
 			},
 		},
 	}, test.Position, test.Args, test.Tests, nil)
+	if err != nil {
+		return nil, err
+	}
+	// exists only supports the plain :mime / :anychild scoping (no selectors).
+	if mode != "" {
+		return nil, parser.ErrorAt(test.Position, "exists :mime does not support :type/:subtype/:contenttype/:param")
+	}
+	if err := validateMimeTags(s, test.Position, loaded.Mime, loaded.AnyChild, "", nil); err != nil {
+		return nil, err
+	}
 	return loaded, err
 }
 
@@ -189,6 +202,7 @@ func loadHeaderTest(s *Script, test parser.Test) (Test, error) {
 	loaded := HeaderTest{matcherTest: newMatcherTest()}
 	var key []string
 	err := LoadSpec(s, loaded.addSpecTags(&Spec{
+		Tags: mimeSpecTags(&loaded.Mime, &loaded.AnyChild, &loaded.MimeMode, &loaded.MimeParams),
 		Pos: []SpecPosArg{
 			{
 				MatchStr: func(val []string) {
@@ -205,6 +219,10 @@ func loadHeaderTest(s *Script, test parser.Test) (Test, error) {
 		},
 	}), test.Position, test.Args, test.Tests, nil)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := validateMimeTags(s, test.Position, loaded.Mime, loaded.AnyChild, loaded.MimeMode, loaded.MimeParams); err != nil {
 		return nil, err
 	}
 
