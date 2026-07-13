@@ -60,6 +60,7 @@ var supportedRequires = map[string]struct{}{
 	YariloPipeExtension:        {},
 	YariloFilterExtension:      {},
 	YariloExecuteExtension:     {},
+	YariloReportExtension:      {},
 }
 
 var (
@@ -117,6 +118,8 @@ func init() {
 		"filter": loadFilterCmd,
 		// vnd.yarilo.execute
 		"execute": loadExecuteCmd,
+		// vnd.yarilo.report
+		"report": loadReport,
 		// vnd.dovecot.testsuite
 		"test":                loadDovecotTest,
 		"test_set":            loadDovecotTestSet,

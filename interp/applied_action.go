@@ -82,3 +82,16 @@ type ActionNotify struct {
 
 func (ActionNotify) testActionName() string    { return "notify" }
 func (ActionNotify) cancelsImplicitKeep() bool { return false }
+
+// ActionReport is emitted by the report command (vnd.yarilo.report). The host
+// generates an RFC 5965 ARF (multipart/report; report-type=feedback-report)
+// message about the current message and sends it to Target.
+type ActionReport struct {
+	FeedbackType string
+	Message      string
+	Target       string
+	HeadersOnly  bool
+}
+
+func (ActionReport) testActionName() string    { return "report" }
+func (ActionReport) cancelsImplicitKeep() bool { return false }
