@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -9,66 +10,67 @@ import (
 	"github.com/foxcpp/go-sieve/interp"
 )
 
+// TestVacation runs the vacation action through the script API and reads the
+// response the runtime records for the envelope sender.
 func TestVacation(t *testing.T) {
-	// Test basic vacation functionality using inline script
-	scriptText := `
-	require ["vacation"];
-	
-	# Test basic vacation command
-	test "Basic vacation" {
-		vacation "I'm on vacation.";
-		
-		if not exists "vacation-response" {
-			test_fail "No vacation response was added";
-		}
-		
-		if not header :contains "vacation-response.subject" "Automated reply" {
-			test_fail "Unexpected subject in vacation response";
-		}
-		
-		if not header :contains "vacation-response.body" "I'm on vacation." {
-			test_fail "Unexpected body in vacation response";
-		}
+	cases := []struct {
+		name   string
+		script string
+		from   string
+		want   *interp.VacationResponse // nil: no response recorded
+	}{
+		{
+			name:   "basic",
+			script: `require ["vacation"]; vacation "I'm on vacation.";`,
+			from:   "sender@example.org",
+			want:   &interp.VacationResponse{Subject: "Automated reply", Body: "I'm on vacation.", Days: 7, Handle: "default"},
+		},
+		{
+			name: "with parameters",
+			script: `require ["vacation"];
+			vacation :days 14 :subject "Out of Office" :from "me@example.com"
+				:addresses ["me@example.com", "me2@example.com"]
+				:mime :handle "vacation-001"
+				"I'm on vacation until next week.";`,
+			from: "sender@example.org",
+			want: &interp.VacationResponse{From: "me@example.com", Subject: "Out of Office", Body: "I'm on vacation until next week.", IsMime: true, Days: 14, Handle: "vacation-001"},
+		},
+		{
+			name:   "no response to own address",
+			script: `require ["vacation"]; vacation :addresses ["me@example.com"] "I'm on vacation.";`,
+			from:   "me@example.com",
+			want:   nil,
+		},
 	}
-	
-	# Test vacation command with all parameters
-	test "Vacation with parameters" {
-		vacation :days 14 :subject "Out of Office" :from "me@example.com" 
-			:addresses ["me@example.com", "me2@example.com"] 
-			:mime :handle "vacation-001" 
-			"I'm on vacation until next week.";
-		
-		if not exists "vacation-response" {
-			test_fail "No vacation response was added";
-		}
-		
-		if not header :contains "vacation-response.subject" "Out of Office" {
-			test_fail "Unexpected subject in vacation response";
-		}
-		
-		if not header :contains "vacation-response.body" "I'm on vacation until next week." {
-			test_fail "Unexpected body in vacation response";
-		}
-		
-		if not header :contains "vacation-response.from" "me@example.com" {
-			test_fail "Unexpected from in vacation response";
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			opts := sieve.DefaultOptions()
+			opts.Lexer.Filename = "inline"
+			parsed, err := sieve.Load(strings.NewReader(tc.script), opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			env := interp.EnvelopeStatic{From: tc.from, To: "recipient@example.com"}
+			data := sieve.NewRuntimeData(parsed, interp.DummyPolicy{}, env, interp.MessageStatic{})
+			if err := parsed.Execute(context.Background(), data); err != nil {
+				t.Fatal(err)
+			}
+			got, ok := data.VacationResponses[tc.from]
+			if tc.want == nil {
+				if ok {
+					t.Fatalf("a response was recorded for the script's own address: %+v", got)
+				}
+				return
+			}
+			if !ok {
+				t.Fatalf("no response recorded for %s; responses: %+v", tc.from, data.VacationResponses)
+			}
+			got.FccFlags = nil // not set by any case; the field is not comparable
+			if fmt.Sprintf("%+v", got) != fmt.Sprintf("%+v", *tc.want) {
+				t.Errorf("response\n got %+v\nwant %+v", got, *tc.want)
+			}
+		})
 	}
-	
-	# Test that no vacation response is sent to our own addresses
-	test "No vacation response to own addresses" {
-		# Set envelope.from to one of our addresses
-		test_set "envelope.from" "me@example.com";
-		
-		vacation :addresses ["me@example.com"] "I'm on vacation.";
-		
-		if exists "vacation-response" {
-			test_fail "Vacation response was added for our own address";
-		}
-	}
-	`
-
-	RunDovecotTestInline(t, "", scriptText)
 }
 
 // TestVacationDirectly tests the vacation functionality directly using the Go API
