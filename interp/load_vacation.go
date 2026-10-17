@@ -108,6 +108,7 @@ func loadVacation(s *Script, pcmd parser.Cmd) (Cmd, error) {
 		return nil, err
 	}
 
+	cmd.DaysGiven, cmd.SecondsGiven = hasDays, hasSeconds
 	if hasDays && hasSeconds {
 		return nil, parser.ErrorAt(pcmd.Position, "vacation: :days and :seconds are mutually exclusive")
 	}

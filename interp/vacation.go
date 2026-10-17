@@ -3,6 +3,7 @@ package interp
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 // VacationResponse represents an autoresponse to be sent.
@@ -42,6 +43,19 @@ type VacationResponse struct {
 
 	// FccSpecialUse is the special-use attribute used to locate the target mailbox (requires special-use).
 	FccSpecialUse string
+
+	// Addresses are the :addresses the script gave: more addresses that are
+	// the user's, for the caller to match the message's recipients against.
+	Addresses []string
+
+	// SubjectGiven is false when the script gave no :subject or an empty one;
+	// Subject then holds the library's default.
+	SubjectGiven bool
+
+	// PeriodGiven reports a :days or :seconds in the script; PeriodSeconds is
+	// that period in seconds, as given, for the caller to bound.
+	PeriodGiven   bool
+	PeriodSeconds int
 }
 
 // CmdVacation represents the vacation command as defined in RFC 5230.
@@ -87,12 +101,17 @@ type CmdVacation struct {
 
 	// FccSpecialUse is the special-use attribute used to locate the target mailbox (requires special-use).
 	FccSpecialUse string
+
+	// DaysGiven and SecondsGiven report which period tag the script used.
+	DaysGiven    bool
+	SecondsGiven bool
 }
 
 // Execute implements the vacation command as defined in RFC 5230.
 func (c CmdVacation) Execute(ctx context.Context, d *RuntimeData) error {
 	// Expand variables in all string fields
 	subject := expandVars(d, c.Subject)
+	subjectGiven := subject != ""
 	if subject == "" {
 		subject = "Automated reply"
 	}
@@ -115,7 +134,7 @@ func (c CmdVacation) Execute(ctx context.Context, d *RuntimeData) error {
 
 	// Check if the sender is in the list of "my" addresses
 	for _, addr := range addresses {
-		if addr == sender {
+		if strings.EqualFold(addr, sender) {
 			// Don't send autoresponse to our own addresses
 			return nil
 		}
@@ -135,6 +154,14 @@ func (c CmdVacation) Execute(ctx context.Context, d *RuntimeData) error {
 		FccFlags:      c.FccFlags,
 		FccCreate:     c.FccCreate,
 		FccSpecialUse: expandVars(d, c.FccSpecialUse),
+		Addresses:     addresses,
+		SubjectGiven:  subjectGiven,
+	}
+	switch {
+	case c.SecondsGiven:
+		resp.PeriodGiven, resp.PeriodSeconds = true, c.Seconds
+	case c.DaysGiven:
+		resp.PeriodGiven, resp.PeriodSeconds = true, c.Days*24*60*60
 	}
 	if c.Seconds > 0 {
 		resp.Seconds = c.Seconds

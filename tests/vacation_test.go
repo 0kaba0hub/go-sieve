@@ -33,7 +33,26 @@ func TestVacation(t *testing.T) {
 				:mime :handle "vacation-001"
 				"I'm on vacation until next week.";`,
 			from: "sender@example.org",
-			want: &interp.VacationResponse{From: "me@example.com", Subject: "Out of Office", Body: "I'm on vacation until next week.", IsMime: true, Days: 14, Handle: "vacation-001"},
+			want: &interp.VacationResponse{From: "me@example.com", Subject: "Out of Office", Body: "I'm on vacation until next week.", IsMime: true, Days: 14, Handle: "vacation-001",
+				Addresses: []string{"me@example.com", "me2@example.com"}, SubjectGiven: true, PeriodGiven: true, PeriodSeconds: 14 * 86400},
+		},
+		{
+			name:   "seconds given, zero included",
+			script: `require ["vacation-seconds"]; vacation :seconds 0 "x";`,
+			from:   "sender@example.org",
+			want:   &interp.VacationResponse{Subject: "Automated reply", Body: "x", Days: 7, Handle: "default", PeriodGiven: true},
+		},
+		{
+			name:   "an empty subject is not given",
+			script: `require ["vacation", "variables"]; set "s" ""; vacation :subject "${s}" "x";`,
+			from:   "sender@example.org",
+			want:   &interp.VacationResponse{Subject: "Automated reply", Body: "x", Days: 7, Handle: "default"},
+		},
+		{
+			name:   "own address matched whatever its case",
+			script: `require ["vacation"]; vacation :addresses ["Me@Example.com"] "I'm on vacation.";`,
+			from:   "me@example.com",
+			want:   nil,
 		},
 		{
 			name:   "no response to own address",
