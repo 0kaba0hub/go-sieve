@@ -23,6 +23,12 @@ type ScriptLoader interface {
 	LoadGlobalScript(ctx context.Context, name string) (io.ReadCloser, error)
 }
 
+// IncludeAllower is a ScriptLoader that names the extensions a script read from
+// location ("personal" or "global") may use; its ihave answers from them.
+type IncludeAllower interface {
+	IncludeAllowed(location string) func(ext string) bool
+}
+
 // ErrReturn signals that a Sieve "return" command was executed.
 // CmdInclude catches it to exit only the included script; when it reaches
 // Script.Execute it is treated identically to ErrStop.
@@ -129,7 +135,13 @@ func (c CmdInclude) Execute(ctx context.Context, d *RuntimeData) error {
 	if err != nil {
 		return fmt.Errorf("include %q: parse: %w", c.Name, err)
 	}
-	included, err := LoadScript(cmds, d.Script.opts)
+	opts := d.Script.opts
+	if a, ok := loader.(IncludeAllower); ok {
+		o := *opts
+		o.Allowed = a.IncludeAllowed(c.Location)
+		opts = &o
+	}
+	included, err := LoadScript(cmds, opts)
 	if err != nil {
 		return fmt.Errorf("include %q: load: %w", c.Name, err)
 	}
