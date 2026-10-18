@@ -39,16 +39,20 @@ type Options struct {
 	// DebugLog is called by the debug_log command (vnd.yarilo.debug extension).
 	// When nil the command is a no-op.
 	DebugLog func(msg string)
+
+	// Allowed says whether the host lets the script use an extension; ihave
+	// answers from it. Nil allows every supported extension.
+	Allowed func(ext string) bool
 }
 
 type Script struct {
 	extensions map[string]struct{}
 	cmd        []Cmd
 
-	// ihave is set when require "ihave" is declared (RFC 5463).
-	// All parse-time extension guards are bypassed so scripts can use any
-	// extension inside an ihave-guarded block without listing it in require.
-	ihave bool
+	// guarded counts the enclosing true ihave blocks naming an extension, and
+	// guardedUsed records each one used there, so Extensions reports it.
+	guarded     map[string]int
+	guardedUsed map[string]struct{}
 
 	opts *Options
 }
@@ -56,19 +60,39 @@ type Script struct {
 var ErrStop = errors.New("interpreter: stop called")
 
 func (s Script) Extensions() []string {
-	exts := make([]string, 0, len(s.extensions))
+	exts := make([]string, 0, len(s.extensions)+len(s.guardedUsed))
 	for ext := range s.extensions {
 		exts = append(exts, ext)
+	}
+	for ext := range s.guardedUsed {
+		if _, ok := s.extensions[ext]; !ok {
+			exts = append(exts, ext)
+		}
 	}
 	return exts
 }
 
 func (s Script) RequiresExtension(name string) bool {
-	if s.ihave {
+	if _, ok := s.extensions[name]; ok {
 		return true
 	}
-	_, ok := s.extensions[name]
-	return ok
+	if s.guarded[name] > 0 {
+		s.guardedUsed[name] = struct{}{}
+		return true
+	}
+	return false
+}
+
+// available says whether ihave may report ext: supported, allowed by the
+// host, and not one RFC 5463 §4 excludes.
+func (s Script) available(ext string) bool {
+	if ext == "variables" || ext == "encoded-character" {
+		return false
+	}
+	if _, ok := supportedRequires[ext]; !ok {
+		return false
+	}
+	return s.opts.Allowed == nil || s.opts.Allowed(ext)
 }
 
 func (s Script) IsVarUsable(variableName string) (settable, gettable bool) {

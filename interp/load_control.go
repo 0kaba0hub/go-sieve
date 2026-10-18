@@ -2,6 +2,7 @@ package interp
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/foxcpp/go-sieve/parser"
 )
@@ -37,8 +38,6 @@ func loadRequire(s *Script, pcmd parser.Cmd) (Cmd, error) {
 		}
 		s.extensions[ext] = struct{}{}
 		switch ext {
-		case "ihave":
-			s.ihave = true
 		case "imapflags":
 			s.extensions["imap4flags"] = struct{}{}
 		case "vacation-seconds":
@@ -50,28 +49,42 @@ func loadRequire(s *Script, pcmd parser.Cmd) (Cmd, error) {
 
 func loadIf(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	cmd := CmdIf{}
-	err := LoadSpec(s, &Spec{
-		AddTest: func(t Test) {
-			cmd.Test = t
-		},
-		AddBlock: func(cmds []Cmd) {
-			cmd.Block = cmds
-		},
-	}, pcmd.Position, pcmd.Args, pcmd.Tests, pcmd.Block)
+	err := loadCondBlock(s, pcmd, &cmd.Test, &cmd.Block)
 	return cmd, err
 }
 
 func loadElsif(s *Script, pcmd parser.Cmd) (Cmd, error) {
 	cmd := CmdElsif{}
-	err := LoadSpec(s, &Spec{
-		AddTest: func(t Test) {
-			cmd.Test = t
-		},
-		AddBlock: func(cmds []Cmd) {
-			cmd.Block = cmds
-		},
-	}, pcmd.Position, pcmd.Args, pcmd.Tests, pcmd.Block)
+	err := loadCondBlock(s, pcmd, &cmd.Test, &cmd.Block)
 	return cmd, err
+}
+
+// loadCondBlock loads an if/elsif. Under a false ihave the block is not loaded
+// and never runs; under a true one it may use what the test names (RFC 5463).
+func loadCondBlock(s *Script, pcmd parser.Cmd, test *Test, block *[]Cmd) error {
+	if len(pcmd.Tests) == 1 && strings.EqualFold(pcmd.Tests[0].Id, "ihave") {
+		t, err := LoadTest(s, pcmd.Tests[0])
+		if err != nil {
+			return err
+		}
+		ih := t.(TestIhave)
+		if !ih.Have {
+			*test = t
+			return nil
+		}
+		for _, c := range ih.Capabilities {
+			s.guarded[c]++
+		}
+		defer func() {
+			for _, c := range ih.Capabilities {
+				s.guarded[c]--
+			}
+		}()
+	}
+	return LoadSpec(s, &Spec{
+		AddTest:  func(t Test) { *test = t },
+		AddBlock: func(cmds []Cmd) { *block = cmds },
+	}, pcmd.Position, pcmd.Args, pcmd.Tests, pcmd.Block)
 }
 
 func loadElse(s *Script, pcmd parser.Cmd) (Cmd, error) {

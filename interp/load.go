@@ -197,8 +197,10 @@ func init() {
 
 func LoadScript(cmdStream []parser.Cmd, opts *Options) (*Script, error) {
 	s := &Script{
-		extensions: map[string]struct{}{},
-		opts:       opts,
+		extensions:  map[string]struct{}{},
+		guarded:     map[string]int{},
+		guardedUsed: map[string]struct{}{},
+		opts:        opts,
 	}
 
 	loadedCmds, err := LoadBlock(s, cmdStream)

@@ -36,9 +36,7 @@ func (s Script) SaveTo(w io.Writer) error {
 		Cmds: s.cmd,
 	}
 
-	for ext := range s.extensions {
-		saved.Extensions = append(saved.Extensions, ext)
-	}
+	saved.Extensions = append(saved.Extensions, s.Extensions()...)
 
 	return gob.NewEncoder(w).Encode(saved)
 }
