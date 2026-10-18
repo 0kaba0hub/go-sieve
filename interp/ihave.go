@@ -14,19 +14,15 @@ func (e *ErrSieveError) Error() string {
 	return fmt.Sprintf("sieve: error: %s", e.Message)
 }
 
-// TestIhave implements the ihave test (RFC 5463).
-// Returns true if all listed capabilities are supported by the interpreter.
+// TestIhave implements the ihave test (RFC 5463). Have is decided at load:
+// every listed capability is supported and allowed by Options.Allowed.
 type TestIhave struct {
 	Capabilities []string
+	Have         bool
 }
 
 func (t TestIhave) Check(_ context.Context, _ *RuntimeData) (bool, error) {
-	for _, cap := range t.Capabilities {
-		if _, ok := supportedRequires[cap]; !ok {
-			return false, nil
-		}
-	}
-	return true, nil
+	return t.Have, nil
 }
 
 // CmdError implements the error command (RFC 5463).

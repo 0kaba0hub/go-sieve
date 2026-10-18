@@ -25,7 +25,11 @@ func loadIhaveTest(s *Script, test parser.Test) (Test, error) {
 	if err != nil {
 		return nil, err
 	}
-	return TestIhave{Capabilities: caps}, nil
+	have := true
+	for _, c := range caps {
+		have = have && s.available(c)
+	}
+	return TestIhave{Capabilities: caps, Have: have}, nil
 }
 
 func loadError(s *Script, pcmd parser.Cmd) (Cmd, error) {
