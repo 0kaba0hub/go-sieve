@@ -3,7 +3,6 @@ package interp
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
 	"strings"
 )
 
@@ -86,8 +85,21 @@ type CmdRedirect struct {
 func (c CmdRedirect) Execute(ctx context.Context, d *RuntimeData) error {
 	addr := expandVars(d, c.Addr)
 
+	target := addr
 	if c.List {
-		listName := expandListName(addr)
+		target = expandListName(addr)
+	}
+	// The policy alone owns the redirect limit, :list included.
+	ok, err := d.Policy.RedirectAllowed(ctx, d, target)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	if c.List {
+		listName := target
 		if err := d.OnAction(ctx, ActionRedirect{
 			ListName: listName,
 			Copy:     c.Copy,
@@ -97,14 +109,6 @@ func (c CmdRedirect) Execute(ctx context.Context, d *RuntimeData) error {
 		if !c.Copy {
 			d.ImplicitKeep = false
 		}
-		return nil
-	}
-
-	ok, err := d.Policy.RedirectAllowed(ctx, d, addr)
-	if err != nil {
-		return err
-	}
-	if !ok {
 		return nil
 	}
 
@@ -120,9 +124,6 @@ func (c CmdRedirect) Execute(ctx context.Context, d *RuntimeData) error {
 		d.ImplicitKeep = false
 	}
 
-	if len(d.RedirectAddr) > d.Script.opts.MaxRedirects {
-		return fmt.Errorf("too many actions")
-	}
 	return nil
 }
 
